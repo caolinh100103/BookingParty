@@ -1,9 +1,4 @@
 ﻿using BusinessLogicLayer.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using AutoMapper;
 using DataAccessLayer.Interface;
 using Model.DTO;
@@ -13,12 +8,17 @@ namespace BusinessLogicLayer
 {
     public class ServicesService : IServicesService
     {
-        private IGenericRepository<Service> _serviceRepository;
-        private IMapper _mapper;
+        private readonly IGenericRepository<Service> _serviceRepository;
+        private readonly IGenericRepository<Promotion> _promotionRepository;
+        private readonly IGenericRepository<Image> _imageRepository;
+        private readonly IMapper _mapper;
 
-        public ServicesService (IGenericRepository<Service> serviceRepository, IMapper mapper)
+        public ServicesService (IGenericRepository<Service> serviceRepository, IGenericRepository<Promotion> promotionRepository,
+            IGenericRepository<Image> imageRepository , IMapper mapper)
         {
             _serviceRepository = serviceRepository;
+            _promotionRepository = promotionRepository;
+            _imageRepository = imageRepository;
             _mapper = mapper;
         }
 
@@ -30,9 +30,32 @@ namespace BusinessLogicLayer
             return checkCreated;
         }
 
-        public async Task<ICollection<Service>> GetAllServices()
+        public async Task<ICollection<ServiceResponseDTO>> GetAllServices()
         {
-            return await _serviceRepository.GetAllAsync();
+            var services = await _serviceRepository.GetAllAsync();
+            ICollection<ServiceResponseDTO> response = new List<ServiceResponseDTO>();
+            foreach (var service in services)
+            {
+                ServiceResponseDTO serviceResponse = new ServiceResponseDTO();
+                var serviceMapper = _mapper.Map<ServiceDTO>(service);
+                serviceResponse.Service = serviceMapper;
+                var promotion = await _promotionRepository.GetByProperty(x => x.ServiceId == service.ServiceId);
+                if (promotion != null)
+                {
+                    if (promotion.StartTime <= DateTime.Now && DateTime.Now <= promotion.EndTime)
+                    {
+                        serviceResponse.Sale_Price = serviceResponse.Service.Price * promotion.ReductionPercent / 100;
+                    }
+                }
+                var image = await _imageRepository.GetByProperty(x => x.ServiceId == service.ServiceId);
+                if (image != null)
+                {
+                    serviceResponse.ImagePath = image.ImagePath;
+                }
+                response.Add(serviceResponse);
+            }
+
+            return response;
         }
 
         public Service GetServicebyId(int Id)

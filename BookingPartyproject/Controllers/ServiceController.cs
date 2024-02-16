@@ -26,10 +26,9 @@ namespace BookingPartyproject.Controllers
         public async Task<IActionResult> Services ()
         {
             var services = await _service.GetAllServices();
-            var serviceDTOs = _mapper.Map<ICollection<ServiceDTO>>(services);
-            ResultDTO<ICollection<ServiceDTO>> servicesResult = new ResultDTO<ICollection<ServiceDTO>>
+            ResultDTO<ICollection<ServiceResponseDTO>> servicesResult = new ResultDTO<ICollection<ServiceResponseDTO>>
             {
-                Data = serviceDTOs,
+                Data = services,
                 isSuccess = true,
                 Message = "Return List of service successfully"
             };

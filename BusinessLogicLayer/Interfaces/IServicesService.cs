@@ -10,7 +10,7 @@ namespace BusinessLogicLayer.Interfaces
 {
     public interface IServicesService
     {
-        public Task<ICollection<Service>> GetAllServices();
+        public Task<ICollection<ServiceResponseDTO>> GetAllServices();
         public Service GetServicebyId(int Id);
         public Task<int> CreateService (ServiceDTO service);
     }

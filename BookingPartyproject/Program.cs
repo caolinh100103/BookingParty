@@ -66,7 +66,7 @@ builder.Services.AddScoped<IBookingService, BookingService>();
 builder.Services.AddScoped<IVnPayService, VnPayService>();
 builder.Services.AddScoped<IDepositService, DepositService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
-
+builder.Services.AddScoped<IUserService, UserService>();
 
 builder.Services.AddScoped<IGenericRepository<Service>, GenericRepository<Service>>();
 builder.Services.AddScoped<IGenericRepository<User>, GenericRepository<User>>();
@@ -78,6 +78,8 @@ builder.Services.AddScoped<IGenericRepository<Deposit>, GenericRepository<Deposi
 builder.Services.AddScoped<IGenericRepository<TransactionHistory>, GenericRepository<TransactionHistory>>();
 builder.Services.AddScoped<IGenericRepository<Contract>, GenericRepository<Contract>>();
 builder.Services.AddScoped<IGenericRepository<Notification>, GenericRepository<Notification>>();
+builder.Services.AddScoped<IGenericRepository<Image>, GenericRepository<Image>>();
+builder.Services.AddScoped<IGenericRepository<Promotion>, GenericRepository<Promotion>>();
 
 
 builder.Services.AddCors(options =>

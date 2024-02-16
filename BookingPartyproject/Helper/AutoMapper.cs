@@ -16,6 +16,8 @@ namespace BookingPartyproject.Helper
             CreateMap<DepositDTO, Deposit>();
             CreateMap<Deposit, DepositDTO>();
             CreateMap<TransactionCreatedDTO, TransactionHistory>();
+            CreateMap<UserReponseDTO, User>();
+            CreateMap<User, UserReponseDTO>();
         }
     }
 }

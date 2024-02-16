@@ -11,7 +11,7 @@ namespace Model.Entity
     {
         [Key]
         public int FeedbackId { get; set; }
-        public int rate { get; set; }
+        public int Rate { get; set; }
         public string Content { get; set; }
         public int Status { get; set; }
 
