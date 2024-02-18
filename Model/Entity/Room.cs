@@ -15,7 +15,8 @@ namespace Model.Entity
         public string Description { get; set; }
         public int Capacity { get; set; }
         public string Address { get; set; }
-
+        public decimal Price { get; set; }
+        public int Status { get; set; }
         public virtual ICollection<BookingDetail> BookingDetails { get; set; }
 
         public int UserId { get; set; }

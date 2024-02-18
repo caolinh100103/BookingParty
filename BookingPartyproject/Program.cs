@@ -67,6 +67,7 @@ builder.Services.AddScoped<IVnPayService, VnPayService>();
 builder.Services.AddScoped<IDepositService, DepositService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IRoomService, RoomService>();
 
 builder.Services.AddScoped<IGenericRepository<Service>, GenericRepository<Service>>();
 builder.Services.AddScoped<IGenericRepository<User>, GenericRepository<User>>();

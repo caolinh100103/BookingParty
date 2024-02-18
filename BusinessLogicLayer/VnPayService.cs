@@ -4,9 +4,11 @@ using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
 using BusinessLogicLayer.Interfaces;
+using DataAccessLayer.Interface;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Model.DTO;
+using Model.Entity;
 
 namespace BusinessLogicLayer;
 
@@ -14,21 +16,23 @@ public class VnPayService : IVnPayService
 {
     private readonly IConfiguration _configuration;
     private readonly SortedList<string, string> _requestData = new SortedList<string, string>(new VnPayCompare());
-    public VnPayService(IConfiguration configuration)
+    private readonly IGenericRepository<Booking> _bookRepository;
+    public VnPayService(IConfiguration configuration, IGenericRepository<Booking> bookRepository)
     {
         _configuration = configuration;
+        _bookRepository = bookRepository;
     }
-    public string CreatePaymentUrl(BookingCreateDTO bookingDto, HttpContext context)
+    public string CreatePaymentUrl(VNPayCreatedDTO vnPayCreatedDto, HttpContext context)
     {
         var timeZoneById = TimeZoneInfo.FindSystemTimeZoneById(_configuration["TimeZoneId"]);
         var timeNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, timeZoneById);
         var tick = DateTime.Now.Ticks.ToString();
         var urlCallBack = _configuration["PaymentCallBack:ReturnUrl"];
-
+        // var booking = await _bookRepository.GetByProperty(x => x.BookingId == vnPayCreatedDto.BookingId);
         AddRequestData("vnp_Version", _configuration["Vnpay:Version"]);
         AddRequestData("vnp_Command", _configuration["Vnpay:Command"]);
         AddRequestData("vnp_TmnCode", _configuration["Vnpay:TmnCode"]);
-        AddRequestData("vnp_Amount", (bookingDto.TotalPrice * 100).ToString());
+        AddRequestData("vnp_Amount", (vnPayCreatedDto.TotalPrice * 100 * vnPayCreatedDto.PercentageDeposit / 100).ToString());
         AddRequestData("vnp_CreateDate", timeNow.ToString("yyyyMMddHHmmss"));
         AddRequestData("vnp_CurrCode", _configuration["Vnpay:CurrCode"]);
         AddRequestData("vnp_IpAddr", GetIpAddress(context));

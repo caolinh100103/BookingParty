@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using BusinessLogicLayer.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Model.DTO;
 
@@ -17,6 +18,7 @@ public class BookingController : ControllerBase
     }
     
     [HttpPost]
+    [Authorize(Roles = "Customer")]
     public async Task<IActionResult> CreateBooking([FromBody] BookingCreateDTO bookingDto)
     {
         string tokenAuth = Request.Cookies["token"];

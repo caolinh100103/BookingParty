@@ -1,4 +1,5 @@
 using BusinessLogicLayer.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Model.DTO;
 
@@ -14,6 +15,7 @@ public class DepositController : ControllerBase
     }
     
     [HttpPost]
+    [Authorize(Roles = "Customer")]
     public async Task<IActionResult> CreateDeposit([FromBody] DepositCreatedDTO depositCreatedDto)
     {
         var response = await _depositService.CreateDeposit(depositCreatedDto);

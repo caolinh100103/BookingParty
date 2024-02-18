@@ -38,13 +38,19 @@ namespace BusinessLogicLayer
             {
                 ServiceResponseDTO serviceResponse = new ServiceResponseDTO();
                 var serviceMapper = _mapper.Map<ServiceDTO>(service);
-                serviceResponse.Service = serviceMapper;
+                serviceResponse.ServiceId = serviceMapper.ServiceId;
+                serviceResponse.Description = serviceMapper.Description;
+                serviceResponse.ServiceName = serviceMapper.ServiceName;
+                serviceResponse.Status = serviceMapper.Status;
+                serviceResponse.CategoryId = serviceMapper.CategoryId;
+                serviceResponse.UserId = serviceMapper.UserId;
+                serviceResponse.Price = serviceMapper.Price;
                 var promotion = await _promotionRepository.GetByProperty(x => x.ServiceId == service.ServiceId);
                 if (promotion != null)
                 {
                     if (promotion.StartTime <= DateTime.Now && DateTime.Now <= promotion.EndTime)
                     {
-                        serviceResponse.Sale_Price = serviceResponse.Service.Price * promotion.ReductionPercent / 100;
+                        serviceResponse.Sale_Price = serviceResponse.Price * promotion.ReductionPercent / 100;
                     }
                 }
                 var image = await _imageRepository.GetByProperty(x => x.ServiceId == service.ServiceId);

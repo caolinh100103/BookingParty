@@ -14,9 +14,9 @@ public class VNPayController : ControllerBase
         _vnPayService = vnPayService;
     }
     [HttpPost]
-    public IActionResult CreatePaymentUrl(BookingCreateDTO bookingDto) // sua lai thanh int bookingId vi tao booking roi moi deposit
+    public IActionResult CreatePaymentUrl(VNPayCreatedDTO vnPayCreatedDto) // sua lai thanh int bookingId vi tao booking roi moi deposit
     {
-        var url = _vnPayService.CreatePaymentUrl(bookingDto, HttpContext);
+        var url = _vnPayService.CreatePaymentUrl(vnPayCreatedDto, HttpContext);
             
         return Ok(Redirect(url));
     }
