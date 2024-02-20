@@ -130,9 +130,7 @@ public class BookingService : IBookingService
                 }
             }
         }
-        //
-        var exactAddress = checkAddress(bookingDto);
-        
+
         //Make booking
         var bookingMapper = new Booking
         {
@@ -160,19 +158,18 @@ public class BookingService : IBookingService
             BookingId = bookingCreated.BookingId,
             StartTime = bookingDto.EndTIme,
             EndTIme = bookingDto.EndTIme,
-            ExactAddress = exactAddress,
             Room = roomDto,
             Services = services
         };
         //make contract
-        createContract();
-        Contract contract = new Contract()
-        { 
-            Status = 1,
-            LinkFile = outputPathContract,
-            BookingServiceId = bookingCreated.BookingId,
-        };
-        var conntractCreated = await _contractRepository.AddAsync(contract);
+        // createContract();
+        // Contract contract = new Contract()
+        // { 
+        //     Status = 1,
+        //     LinkFile = outputPathContract,
+        //     BookingServiceId = bookingCreated.BookingId,
+        // };
+        // var conntractCreated = await _contractRepository.AddAsync(contract);
         
         ResultDTO<BookingResponseDTO> response = new ResultDTO<BookingResponseDTO>
         {
@@ -190,20 +187,6 @@ public class BookingService : IBookingService
         };
         var notification = await _notificationRepository.AddAsync(noti);
         return response;
-    }
-
-    private string checkAddress(BookingCreateDTO bookingDto)
-    {
-        if (bookingDto.Ward == null || bookingDto.District == null)
-        {
-            return bookingDto.ExactAddress;
-        }
-        else
-        {
-            string exactAddress = "Ward " + bookingDto.Ward + ", " + "District " + bookingDto.District + ", " +
-                                  bookingDto.ExactAddress;
-            return exactAddress;
-        }
     }
 
     // private void CreateContract(string samplePdfPath, string outputPath)
