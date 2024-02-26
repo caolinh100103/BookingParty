@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
+using DataAccessLayer.Common;
 
 namespace DataAccessLayer.Interface
 {
@@ -17,5 +18,6 @@ namespace DataAccessLayer.Interface
         Task<int> DeleteAsync(T entity);
         Task<T> GetByProperty(Expression<Func<T, bool>> predicate);
         Task<ICollection<T>> GetListByProperty(Expression<Func<T, bool>> predicate);
+        Task<PaginatedResult<T>> GetPaginatedListAsync(int page, int pageSize);
     }
 }

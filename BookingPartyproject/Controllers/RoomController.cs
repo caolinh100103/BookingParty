@@ -12,10 +12,25 @@ public class RoomController : ControllerBase
         _roomService = roomService;
     }
     
-    [HttpGet]
-    public async Task<IActionResult> getRooms()
+    [HttpGet("rooms")]
+    public async Task<IActionResult> GetAllRooms()
     {
         var response = await _roomService.GetRooms();
+        if (response == null)
+        {
+            return BadRequest();
+        }
+        if (!response.isSuccess)
+        {
+            return BadRequest();
+        }
+
+        return Ok(response);
+    }
+    [HttpGet("roomsPage")]
+    public async Task<IActionResult> GetAllRoomsWithPaging(int page, int pageSize)
+    {
+        var response = await _roomService.GetRoomsWithPaging(page, pageSize);
         if (response == null)
         {
             return BadRequest();

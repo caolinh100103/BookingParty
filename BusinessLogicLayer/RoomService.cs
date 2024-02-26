@@ -92,4 +92,72 @@ public class RoomService : IRoomService
         };
         return result;
     }
+
+    public async Task<ResultDTO<ICollection<RoomResponse>>> GetRoomsWithPaging(int page, int pageSize)
+    {
+        ICollection<RoomResponse> roomResponses = new List<RoomResponse>(); 
+        ICollection<FeedbackReponseDTO> feedbackReponseDtos = new List<FeedbackReponseDTO>();
+        var roomsPage = await _roomRepository.GetPaginatedListAsync(page, pageSize);
+        ICollection<FacilityRepsonseDTO> facilityRepsonseDtos = new List<FacilityRepsonseDTO>();
+        RoomResponse roomResponse = null;
+        foreach (var room in roomsPage.Items)
+        {
+            var facilities = await _facilityRepository.GetListByProperty(x => x.RoomId == room.RoomId);
+            if (!facilities.IsNullOrEmpty())
+            {
+                foreach (var facility in facilities)
+                {
+                    var facilityMapper = _mapper.Map<FacilityRepsonseDTO>(facility);
+                    facilityRepsonseDtos.Add(facilityMapper);
+                }
+                roomResponse.Facilities = facilityRepsonseDtos;
+            }
+            var feedbacks = await _feedbackRepository.GetListByProperty(x => x.RoomId == room.RoomId);
+            if (!feedbacks.IsNullOrEmpty())
+            {
+                foreach (var feedback in feedbacks)
+                {
+                    var feedbackMapper = _mapper.Map<FeedbackReponseDTO>(feedback);
+                    feedbackReponseDtos.Add(feedbackMapper);
+                }
+                roomResponse.Feedbacks = feedbackReponseDtos;
+            }
+            roomResponse = new RoomResponse()
+            {
+                Address = room.Address,
+                Capacity = room.Capacity,
+                RoomId = room.RoomId,
+                Description = room.Description,
+                Status = room.Status,
+                RoomName = room.RoomName,
+                Price = room.Price,
+                Facilities = facilityRepsonseDtos
+            };
+            var promotion = await _promotionRepository.GetByProperty(x => x.RoomId == room.RoomId);
+            if (promotion != null)
+            {
+                if (promotion.StartTime <= DateTime.Now && DateTime.Now <= promotion.EndTime)
+                {
+                    roomResponse.SalePrice = roomResponse.Price * promotion.ReductionPercent / 100;
+                }
+            }
+            var images = await _imageRepository.GetListByProperty(x => x.RoomId == room.RoomId);
+            if (!images.IsNullOrEmpty())
+            {
+                foreach (var image in images)
+                {
+                    roomResponse.ImagePaths.Add(image.ImagePath);
+                }
+            }
+            roomResponses.Add(roomResponse);
+        }
+
+        ResultDTO<ICollection<RoomResponse>> result = new ResultDTO<ICollection<RoomResponse>>()
+        {
+            Data = roomResponses,
+            isSuccess = true,
+            Message = "Return rooms successfully"
+        };
+        return result;
+    }
 }

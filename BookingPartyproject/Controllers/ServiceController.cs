@@ -34,6 +34,20 @@ namespace BookingPartyproject.Controllers
             };
             return Ok(servicesResult);
         }
+        [HttpGet("servicesPage")]
+        [ProducesResponseType(200, Type = typeof(ServiceDTO))]
+        [AllowAnonymous]
+        public async Task<IActionResult> Services (int page, int pageSize)
+        {
+            var services = await _service.GetAllServicesWithPaging(page, pageSize);
+            ResultDTO<ICollection<ServiceResponseDTO>> servicesResult = new ResultDTO<ICollection<ServiceResponseDTO>>
+            {
+                Data = services,
+                isSuccess = true,
+                Message = "Return List of service successfully"
+            };
+            return Ok(servicesResult);
+        }
 
         [HttpPost]
         [Authorize(Roles = "Party Host")]

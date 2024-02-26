@@ -7,6 +7,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
+using DataAccessLayer.Common;
 
 namespace DataAccessLayer
 {
@@ -63,6 +64,21 @@ namespace DataAccessLayer
         public async Task<ICollection<T>> GetListByProperty(Expression<Func<T, bool>> predicate)
         {
             return await _dbSet.Where(predicate).ToListAsync();
+        }
+
+        public async Task<PaginatedResult<T>> GetPaginatedListAsync(int page, int pageSize)
+        {
+            var totalCount = await _dbSet.CountAsync();
+            var pageCount = (int)Math.Ceiling(totalCount / (double)pageSize);
+
+            var items = await _dbSet.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+
+            return new PaginatedResult<T>
+            {
+                Items = items,
+                TotalCount = totalCount,
+                PageCount = pageCount
+            };
         }
     }
 }
