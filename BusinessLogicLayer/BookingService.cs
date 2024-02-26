@@ -60,6 +60,53 @@ public class BookingService : IBookingService
     
     public async Task<ResultDTO<BookingResponseDTO>> CreateBooking(BookingCreateDTO bookingDto, string token)
     {
+        if (bookingDto.StartTime <= DateTime.Now || bookingDto.EndTIme <= DateTime.Now)
+        {
+            ResultDTO<BookingResponseDTO> bookingResponse = new ResultDTO<BookingResponseDTO>
+            {
+                Message = "Can not have Booking for the past",
+                isSuccess = false,
+                Data = null
+            };
+            return bookingResponse;
+        }
+
+        if (bookingDto.StartTime >= bookingDto.EndTIme)
+        {
+            ResultDTO<BookingResponseDTO> bookingResponse = new ResultDTO<BookingResponseDTO>
+            {
+                Message = "Can not have Booking with the time end before start",
+                isSuccess = false,
+                Data = null
+            };
+            return bookingResponse;
+        }
+
+        var days = (bookingDto.StartTime - DateTime.Now).Days;
+        if (days < 30)
+        {
+            ResultDTO<BookingResponseDTO> bookingResponse = new ResultDTO<BookingResponseDTO>
+            {
+                Message = "You have to book before 30 days",
+                isSuccess = false,
+                Data = null
+            };
+            return bookingResponse;
+        }
+        if (bookingDto.TotalPrice >= 100000000)
+        {
+            if (days < 60)
+            {
+                ResultDTO<BookingResponseDTO> bookingResponse = new ResultDTO<BookingResponseDTO>
+                {
+                    Message = "Your booking's Total Price is over 100 millions so Booking before 60 days",
+                    isSuccess = false,
+                    Data = null
+                };
+                return bookingResponse;
+            }
+        }
+        
         // Decode the token to access claims
         var tokenHandler = new JwtSecurityTokenHandler();
         var securityToken  = tokenHandler.ReadToken(token) as SecurityToken;
@@ -109,16 +156,17 @@ public class BookingService : IBookingService
                 return responseDto;
             }
         }
-
         //Check phong co bi trung khong
         // var room = bookingDto.Room;
         var bookingDetailList = await _bookingDetailRepository.GetListByProperty(x => x.RoomId == roomDto.RoomId); // Find the Room in booking detail
+        
         if (bookingDetailList.Count > 0)
         {
             foreach (var bookingDetail in bookingDetailList)
             {
                 if (bookingDto.StartTime <= bookingDetail.StartTime && bookingDetail.StartTime <= bookingDto.EndTIme ||
-                    bookingDto.StartTime <= bookingDetail.EndTIme && bookingDetail.EndTIme <= bookingDto.EndTIme)
+                    bookingDto.StartTime <= bookingDetail.EndTIme && bookingDetail.EndTIme <= bookingDto.EndTIme 
+                    || bookingDto.StartTime <= bookingDetail.StartTime && bookingDto.EndTIme >= bookingDetail.EndTIme)
                 {
                     ResultDTO<BookingResponseDTO> bookingResponse = new ResultDTO<BookingResponseDTO>
                     {

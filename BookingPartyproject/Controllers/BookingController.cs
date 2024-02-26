@@ -35,4 +35,6 @@ public class BookingController : ControllerBase
         var bookingResponse = await _bookingService.CreateBooking(bookingDto, tokenAuth);
         return Ok(bookingResponse);
     }
+    // [HttpGet]
+    // public async Task<IActionResult> GetBoookingByUserId
 }

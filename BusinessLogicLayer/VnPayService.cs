@@ -32,7 +32,7 @@ public class VnPayService : IVnPayService
         AddRequestData("vnp_Version", _configuration["Vnpay:Version"]);
         AddRequestData("vnp_Command", _configuration["Vnpay:Command"]);
         AddRequestData("vnp_TmnCode", _configuration["Vnpay:TmnCode"]);
-        AddRequestData("vnp_Amount", (vnPayCreatedDto.TotalPrice * 100 * vnPayCreatedDto.PercentageDeposit / 100).ToString());
+        AddRequestData("vnp_Amount", (vnPayCreatedDto.TotalPrice * 100 * 50 / 100).ToString());
         AddRequestData("vnp_CreateDate", timeNow.ToString("yyyyMMddHHmmss"));
         AddRequestData("vnp_CurrCode", _configuration["Vnpay:CurrCode"]);
         AddRequestData("vnp_IpAddr", GetIpAddress(context));

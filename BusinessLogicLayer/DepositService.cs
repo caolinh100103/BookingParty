@@ -51,7 +51,7 @@ public class DepositService : IDepositService
         {
             Content = depositCreatedDto.Content,
             Title = depositCreatedDto.Title,
-            Percentage = depositCreatedDto.Percentage,
+            Percentage = 50,
             BookingId = depositCreatedDto.BookingId
         };
         var depositMapper = _mapper.Map<Deposit>(depositDto);
@@ -66,11 +66,12 @@ public class DepositService : IDepositService
                     PaymentMethod = depositCreatedDto.TransactionCreatedDto.PaymentMethod,
                     BankCode = null,
                     TransactionDate = depositCreatedDto.TransactionCreatedDto.TransactionDate,
-                    Status = TransactionStatus.FAIL,
-                    DepositId = deposit.DepositId
                 };
                 var transactionMapper = _mapper.Map<TransactionHistory>(transactionCreatedDto);
                 var transaction = await _transactionRepository.AddAsync(transactionMapper);
+                transaction.DepositId = deposit.DepositId;
+                transaction.Status = TransactionStatus.FAIL;
+                var transactionUpdate = await _transactionRepository.UpdateAsync(transaction);
                 if (transaction != null)
                 {
                     var booking = await _bookingRepository.GetByProperty(x => x.BookingId == deposit.BookingId);
@@ -78,7 +79,7 @@ public class DepositService : IDepositService
                     DepositResponseDTO responseDto = new DepositResponseDTO()
                     {
                         DepositId = deposit.DepositId,
-                        Percentage = deposit.Percentage,
+                        Percentage = 50,
                         Title = deposit.Title,
                         Content = deposit.Content,
                         Booking = booking
@@ -101,11 +102,12 @@ public class DepositService : IDepositService
                     PaymentMethod = depositCreatedDto.TransactionCreatedDto.PaymentMethod,
                     BankCode = depositCreatedDto.TransactionCreatedDto.BankCode,
                     TransactionDate = depositCreatedDto.TransactionCreatedDto.TransactionDate,
-                    Status = TransactionStatus.SUCCESS,
-                    DepositId = deposit.DepositId
                 };
                 var transactionMapper = _mapper.Map<TransactionHistory>(transactionCreatedDto);
                 var transaction = await _transactionRepository.AddAsync(transactionMapper);
+                transaction.DepositId = deposit.DepositId;
+                transaction.Status = TransactionStatus.SUCCESS;
+                var transactionUpdate = await _transactionRepository.UpdateAsync(transaction);
                 if (transaction != null)
                 {
                     var booking = await _bookingRepository.GetByProperty(x => x.BookingId == deposit.BookingId);
@@ -113,7 +115,7 @@ public class DepositService : IDepositService
                     DepositResponseDTO responseDto = new DepositResponseDTO()
                     {
                         DepositId = deposit.DepositId,
-                        Percentage = deposit.Percentage,
+                        Percentage = 50,
                         Title = deposit.Title,
                         Content = deposit.Content,
                         Booking = booking
@@ -143,13 +145,8 @@ public class DepositService : IDepositService
     {
         if (booking.Status == BookingStatus.PENDING)
         {
-            booking.Status = BookingStatus.FIRST_DEPOSITED;
-            var updateBookingStatus = await _bookingRepository.UpdateAsync(booking);
-        }
-        else if (booking.Status == BookingStatus.FIRST_DEPOSITED)
-        {
             booking.Status = BookingStatus.DEPOSITED;
-            var updateBookingSattus = await _bookingRepository.UpdateAsync(booking);
+            var updateBookingStatus = await _bookingRepository.UpdateAsync(booking);
         }
         else if (booking.Status == BookingStatus.DEPOSITED)
         {

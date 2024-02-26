@@ -24,5 +24,6 @@ namespace Model.Entity
         public virtual ICollection<Feedback> Feedbacks { get; set; }
         public virtual ICollection<Promotion> Promotions { get; set; }
         public virtual ICollection<Image> Images { get; set; }
+        public virtual ICollection<Facility> Facilities { get; set; }
     }
 }

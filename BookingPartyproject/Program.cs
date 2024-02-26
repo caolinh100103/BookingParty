@@ -29,6 +29,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddCookie(option =>
     {
         option.Cookie.Name = "token";
+        option.Cookie.SameSite = SameSiteMode.None;
+        option.Cookie.Domain = "localhost";
+        option.Cookie.HttpOnly = true;
+        option.Cookie.SecurePolicy = CookieSecurePolicy.None;
     })
     .AddJwtBearer(options =>
     {
@@ -50,6 +54,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             }
         };
     });
+
+
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -81,6 +87,8 @@ builder.Services.AddScoped<IGenericRepository<Contract>, GenericRepository<Contr
 builder.Services.AddScoped<IGenericRepository<Notification>, GenericRepository<Notification>>();
 builder.Services.AddScoped<IGenericRepository<Image>, GenericRepository<Image>>();
 builder.Services.AddScoped<IGenericRepository<Promotion>, GenericRepository<Promotion>>();
+builder.Services.AddScoped<IGenericRepository<Facility>, GenericRepository<Facility>>();
+builder.Services.AddScoped<IGenericRepository<Feedback>, GenericRepository<Feedback>>();
 
 
 builder.Services.AddCors(options =>
@@ -90,7 +98,8 @@ builder.Services.AddCors(options =>
         {
             builder.AllowAnyOrigin()
                 .AllowAnyHeader()
-                .AllowAnyMethod();
+                .AllowAnyMethod().AllowCredentials()
+                .WithOrigins("http://localhost:3000");
         });
 });
 
@@ -106,10 +115,10 @@ app.UseSwaggerUI(options =>
 });
 
 app.UseCors(x => x
-             .AllowAnyMethod()
-             .AllowAnyHeader()
-             .SetIsOriginAllowed(origin => true)
-             .AllowCredentials()); 
+    .AllowAnyMethod()
+    .AllowAnyHeader()
+    .SetIsOriginAllowed(origin => true)
+    .AllowCredentials());
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();

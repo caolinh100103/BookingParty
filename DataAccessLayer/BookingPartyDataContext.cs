@@ -147,6 +147,11 @@ namespace DataAccessLayer
           .WithMany(x => x.Images)
           .HasForeignKey(x => x.RoomId)
           .OnDelete(DeleteBehavior.Restrict);
+           
+           modelBuilder.Entity<Facility>()
+               .HasOne(x => x.Room)
+               .WithMany(x => x.Facilities)
+               .HasForeignKey(x => x.RoomId);
         }
     }
 }
