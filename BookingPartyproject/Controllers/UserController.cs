@@ -33,4 +33,12 @@ public class UserController : ControllerBase
         var reponse = await _userService.GetUserById(tokenAuth);
         return Ok(reponse);
     } 
+    
+    [HttpGet]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetAllUser()
+    {
+        var result = await _userService.GetAllUser();
+        return Ok(result);
+    } 
 }

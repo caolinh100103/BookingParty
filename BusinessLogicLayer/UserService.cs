@@ -4,6 +4,7 @@ using AutoMapper;
 using BusinessLogicLayer.Interfaces;
 using DataAccessLayer.Interface;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.VisualBasic;
 using Model.DTO;
 using Model.Entity;
 
@@ -44,5 +45,23 @@ public class UserService : IUserService
             Message = "Return user succefully"
         };
         return response;
+    }
+
+    public async Task<ResultDTO<ICollection<UserReponseDTO>>> GetAllUser()
+    {
+        ResultDTO<ICollection<UserReponseDTO>> result = null;
+        ICollection<UserReponseDTO> userReponseDtos = new List<UserReponseDTO>();
+        var users = await _userRepository.GetAllAsync();
+        foreach (var user in users)
+        {
+            userReponseDtos.Add(_mapper.Map<UserReponseDTO>(user));
+        }
+        result = new ResultDTO<ICollection<UserReponseDTO>>()
+        {
+            Data = userReponseDtos,
+            isSuccess = true,
+            Message = "Return list of User"
+        };
+        return result;
     }
 }
