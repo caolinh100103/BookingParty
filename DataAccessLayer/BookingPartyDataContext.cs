@@ -152,6 +152,13 @@ namespace DataAccessLayer
                .HasOne(x => x.Room)
                .WithMany(x => x.Facilities)
                .HasForeignKey(x => x.RoomId);
+           modelBuilder.Entity<ServiceAvailableInDay>()
+               .HasOne(x => x.Service)
+               .WithMany(x => x.ServiceAvailableInDays)
+               .HasForeignKey(x => x.ServiceId);
+           modelBuilder.Entity<ServiceAvailableInDay>()
+               .Property(x => x.NumberOfAvailableInDay)
+               .HasDefaultValue(5);
         }
     }
 }
