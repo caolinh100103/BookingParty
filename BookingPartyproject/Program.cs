@@ -74,6 +74,7 @@ builder.Services.AddScoped<IDepositService, DepositService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IRoomService, RoomService>();
+builder.Services.AddScoped<IFileService, FileService>();
 
 builder.Services.AddScoped<IGenericRepository<Service>, GenericRepository<Service>>();
 builder.Services.AddScoped<IGenericRepository<User>, GenericRepository<User>>();
@@ -89,7 +90,7 @@ builder.Services.AddScoped<IGenericRepository<Image>, GenericRepository<Image>>(
 builder.Services.AddScoped<IGenericRepository<Promotion>, GenericRepository<Promotion>>();
 builder.Services.AddScoped<IGenericRepository<Facility>, GenericRepository<Facility>>();
 builder.Services.AddScoped<IGenericRepository<Feedback>, GenericRepository<Feedback>>();
-
+builder.Services.AddScoped<IGenericRepository<ServiceAvailableInDay>, GenericRepository<ServiceAvailableInDay>>();
 
 builder.Services.AddCors(options =>
 {

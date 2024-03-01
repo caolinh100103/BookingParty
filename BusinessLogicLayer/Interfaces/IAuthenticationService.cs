@@ -1,3 +1,4 @@
+using Model.DTO;
 using Model.Entity;
 
 namespace BusinessLogicLayer.Interfaces;

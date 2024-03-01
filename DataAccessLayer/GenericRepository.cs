@@ -80,5 +80,10 @@ namespace DataAccessLayer
                 PageCount = pageCount
             };
         }
+
+        public T GetLast<TKey>(Expression<Func<T, TKey>> keySelector)
+        {
+            return _dbSet.OrderByDescending(keySelector).FirstOrDefault();
+        }
     }
 }

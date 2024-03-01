@@ -5,28 +5,17 @@ using AutoMapper;
 using BusinessLogicLayer.Enum;
 using BusinessLogicLayer.Interfaces;
 using DataAccessLayer.Interface;
-using iText.Kernel.Font;
-using iText.Kernel.Pdf;
-using iText.Kernel.Pdf.Canvas;
-using iText.Kernel.Pdf.Canvas.Parser;
-using iText.Layout;
-using iText.Layout.Element;
-using iText.Layout.Properties;
 using Microsoft.IdentityModel.Tokens;
 using Model.DTO;
 using Model.Entity;
-using iText.Forms;
-using iText.Forms.Fields;
-using System.IO;
 using System.Reflection;
-using iText.Kernel.Pdf;
-using iText.Kernel.Geom;
-using iText.Kernel.Pdf.Canvas.Parser.Data;
-using iText.Kernel.Pdf.Canvas.Parser.Listener;
+using BusinessLogicLayer.Helper;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Office.Interop.Word;
-using Org.BouncyCastle.Pkix;
-
-
+using System.Text;
+using Newtonsoft.Json;
+using System.Net;
 
 namespace BusinessLogicLayer;
 
@@ -38,24 +27,34 @@ public class BookingService : IBookingService
     private readonly IGenericRepository<Service> _serviceRepository;
     private readonly IGenericRepository<Room> _roomRepository;
     private readonly IGenericRepository<User> _userRepository;
-    private readonly IGenericRepository<Contract> _contractRepository;
     private readonly IGenericRepository<Notification> _notificationRepository;
+    private readonly IGenericRepository<ServiceAvailableInDay> _serviceAvailableRepository;
+    private readonly IGenericRepository<Deposit> _depositRepository;
+    private readonly IGenericRepository<TransactionHistory> _transactionRepository;
+    private readonly IConfiguration _configuration;
     private readonly IMapper _mapper;
 
     private string samplePathContract = "D:/FPT/CN7/SWD392/testPdf/sample.pdf";
     private string outputPathContract = "D:/FPT/CN7/SWD392/testPdf/output/Output.pdf";
         public BookingService(IGenericRepository<Booking> bookingRepository, IGenericRepository<BookingDetail> bookingDetailRepository,IGenericRepository<Service> serviceRepository
         , IGenericRepository<Room> roomRepository, IGenericRepository<User> userRepository, IGenericRepository<Contract> contractRepository,
-        IGenericRepository<Notification> notificationRepository,IMapper mapper)
+        IGenericRepository<Notification> notificationRepository,IMapper mapper,
+        IGenericRepository<ServiceAvailableInDay> serviceAvailableRepository,
+        IGenericRepository<Deposit> depositRepository,
+        IGenericRepository<TransactionHistory> transactionRepository,
+        IConfiguration configuration)
     {
         _bookingRepository = bookingRepository;
         _bookingDetailRepository = bookingDetailRepository;
         _serviceRepository = serviceRepository;
         _roomRepository = roomRepository;
         _userRepository = userRepository;
-        _contractRepository = contractRepository;
         _notificationRepository = notificationRepository;
+        _serviceAvailableRepository = serviceAvailableRepository;
+        _depositRepository = depositRepository;
+        _transactionRepository = transactionRepository;
         _mapper = mapper;
+        _configuration = configuration;
     }
     
     public async Task<ResultDTO<BookingResponseDTO>> CreateBooking(BookingCreateDTO bookingDto, string token)
@@ -81,7 +80,7 @@ public class BookingService : IBookingService
             };
             return bookingResponse;
         }
-
+        
         var days = (bookingDto.StartTime - DateTime.Now).Days;
         if (days < 30)
         {
@@ -106,7 +105,18 @@ public class BookingService : IBookingService
                 return bookingResponse;
             }
         }
-        
+
+        var hours = (bookingDto.EndTIme - bookingDto.StartTime).Hours;
+        if (hours > 4)
+        {
+            ResultDTO<BookingResponseDTO> bookingResponse = new ResultDTO<BookingResponseDTO>
+            {
+                Message = "Your booking have to book just less than 4 hours",
+                isSuccess = false,
+                Data = null
+            };
+            return bookingResponse;
+        }
         // Decode the token to access claims
         var tokenHandler = new JwtSecurityTokenHandler();
         var securityToken  = tokenHandler.ReadToken(token) as SecurityToken;
@@ -120,7 +130,7 @@ public class BookingService : IBookingService
         }
         var user = await _userRepository.GetByProperty(x => x.Email.Equals(emailClaim));
         ICollection<ServiceDTO> services = null;
-        if (bookingDto.ServiceIds.ElementAt(0).Equals(0))
+        if (bookingDto.ServiceIds == null)
         {
             services = null;
         }
@@ -129,11 +139,14 @@ public class BookingService : IBookingService
             services = new Collection<ServiceDTO>();
         }
 
-        foreach (var serviceId in bookingDto.ServiceIds)
+        if (services != null)
         {
-            var service = await _serviceRepository.GetByIdAsync(serviceId);
-            var serviceDtoMapper = _mapper.Map<ServiceDTO>(service);
-            services.Add(serviceDtoMapper);
+            foreach (var serviceId in bookingDto.ServiceIds)
+            {
+                var service = await _serviceRepository.GetByIdAsync(serviceId);
+                var serviceDtoMapper = _mapper.Map<ServiceDTO>(service);
+                services.Add(serviceDtoMapper);
+            }
         }
 
         Room room = null;
@@ -143,21 +156,43 @@ public class BookingService : IBookingService
         }
         var roomDto = _mapper.Map<RoomDTO>(room);
         // Check the same categories
-        for (int i = 0; i < services.Count() - 1; i++)
+        if (services != null)
         {
-            if (services.ElementAt(i).CategoryId == services.ElementAt(i + 1).CategoryId)
+            for (int i = 0; i < services.Count() - 1; i++)
             {
-                ResultDTO<BookingResponseDTO> responseDto = new ResultDTO<BookingResponseDTO>
+                if (services.ElementAt(i).CategoryId == services.ElementAt(i + 1).CategoryId)
                 {
-                    Message = "Can not have two same categories in a booking",
-                    isSuccess = false,
-                    Data = null
-                };
-                return responseDto;
+                    ResultDTO<BookingResponseDTO> responseDto = new ResultDTO<BookingResponseDTO>
+                    {
+                        Message = "Can not have two same categories in a booking",
+                        isSuccess = false,
+                        Data = null
+                    };
+                    return responseDto;
+                }
             }
         }
         //Check phong co bi trung khong
         // var room = bookingDto.Room;
+        if (services != null)
+        {
+            foreach (var service in services)
+            {
+                var bookingServiceInDay = await _serviceAvailableRepository.GetByProperty(x =>
+                    x.ServiceId == service.ServiceId
+                    && x.Date.Date == bookingDto.StartTime.Date && x.NumberOfAvailableInDay == 0);
+                if (bookingServiceInDay != null)
+                {
+                    ResultDTO<BookingResponseDTO> responseDto = new ResultDTO<BookingResponseDTO>
+                    {
+                        Message = "You have booked a service that exceed booking times today",
+                        isSuccess = false,
+                        Data = null
+                    };
+                    return responseDto;
+                }
+            }
+        }
         var bookingDetailList = await _bookingDetailRepository.GetListByProperty(x => x.RoomId == roomDto.RoomId); // Find the Room in booking detail
         
         if (bookingDetailList.Count > 0)
@@ -188,11 +223,25 @@ public class BookingService : IBookingService
             TotalPrice = bookingDto.TotalPrice
         };
         var bookingCreated = await _bookingRepository.AddAsync(bookingMapper);
-        foreach (var service in services)
+        if (services != null)
+        {
+            foreach (var service in services)
+            {
+                var bookingDetail = new BookingDetail
+                {
+                    ServiceId = service.ServiceId,
+                    BookingId = bookingCreated.BookingId,
+                    StartTime = bookingDto.StartTime,
+                    EndTIme = bookingDto.EndTIme,
+                    RoomId = bookingDto.RoomId
+                };
+                var bookingDetailCreated = await _bookingDetailRepository.AddAsync(bookingDetail);
+            }
+        }
+        else
         {
             var bookingDetail = new BookingDetail
             {
-                ServiceId = service.ServiceId,
                 BookingId = bookingCreated.BookingId,
                 StartTime = bookingDto.StartTime,
                 EndTIme = bookingDto.EndTIme,
@@ -234,239 +283,94 @@ public class BookingService : IBookingService
             SentTime = DateTime.Now
         };
         var notification = await _notificationRepository.AddAsync(noti);
+        if (services != null) {
+            foreach(var service in services)
+            {
+                var bookingServiceInDay = await _serviceAvailableRepository.GetByProperty(x =>
+                    x.ServiceId == service.ServiceId
+                    && x.Date.Date == bookingDto.StartTime.Date);
+                if (bookingServiceInDay == null)
+                {
+                    ServiceAvailableInDay serviceAvailableInDay = new ServiceAvailableInDay()
+                    {
+                        ServiceId = service.ServiceId,
+                        Date = bookingDto.StartTime,
+                        NumberOfAvailableInDay = 5,
+                    };
+                    bookingServiceInDay = await _serviceAvailableRepository.AddAsync(serviceAvailableInDay);
+                }
+                bookingServiceInDay.NumberOfAvailableInDay -= 1;
+                _ = await _serviceAvailableRepository.UpdateAsync(bookingServiceInDay);
+            }
+        }
         return response;
     }
 
-    // private void CreateContract(string samplePdfPath, string outputPath)
-    // {
-    //     try
-    //     {
-    //         using (PdfReader reader = new PdfReader(samplePdfPath))
-    //         {
-    //             using (PdfWriter writer = new PdfWriter(outputPath))
-    //             {
-    //                 using (PdfDocument pdfDoc = new PdfDocument(reader, writer))
-    //                 {
-    //                     // PdfAcroForm form = PdfAcroForm.GetAcroForm(pdf, true);
-    //                     // if (form != null)
-    //                     // {
-    //                     //     IDictionary<string, PdfFormField> fields = form.GetFormFields();
-    //                     //     PdfFormField toset;
-    //                     //
-    //                     //     fields.TryGetValue("Phone:", out toset);
-    //                     //     toset.SetValue("123-456");
-    //                     //
-    //                     //     // pdf.Close();
-    //                     //     // outputStream.Position = 0;
-    //                     //     // using (FileStream fileStream = new FileStream(outputPath, FileMode.Create, FileAccess.Write))
-    //                     //     // {
-    //                     //     //     outputStream.WriteTo(fileStream);
-    //                     //     // }
-    //                     // }
-    //                     // Get the number of pages in the PDF document
-    //                     int totalPages = pdfDoc.GetNumberOfPages();
-    //
-    //                     // Loop through each page
-    //                     for (int pageNum = 1; pageNum <= totalPages; pageNum++)
-    //                     {
-    //                         // Extract text from the current page
-    //                         string pageText = PdfTextExtractor.GetTextFromPage(pdfDoc.GetPage(pageNum));
-    //
-    //                         // Check if the page contains the text "Phone"
-    //                         if (pageText.Contains("Phone"))
-    //                         {
-    //                             // Get the position of "Phone" on the page
-    //                             int index = pageText.IndexOf("Phone");
-    //
-    //                             // Get the coordinates of "Phone" on the page
-    //                             IList<TextRenderInfo> renderInfos = PdfTextExtractor.GetTextFromPage(pdfDoc.GetPage(pageNum), new LocationTextExtractionStrategy()).Re();
-    //                             TextRenderInfo phoneTextRenderInfo = renderInfos[index];
-    //                             Rectangle phoneBoundingBox = phoneTextRenderInfo.GetBoundingBox();
-    //
-    //                             float x = rect.GetX();
-    //                             float y = rect.GetY();
-    //
-    //                             // Create a document
-    //                             Document document = new Document(pdfDoc);
-    //
-    //                             // Add the modified content to the document at the same position as "Phone"
-    //                             document.SetFixedPosition(x, y, 100); // Adjust the width as needed
-    //                             // document.Add(new Paragraph(newText));
-    //
-    //                             // Close the document
-    //                             document.Close();
-    //                         }
-    //                     }
-    //                     // // Iterate through each page
-    //                     // for (int i = 1; i <= pdfDoc.GetNumberOfPages(); i++)
-    //                     // {
-    //                     //     // Get the current page
-    //                     //     PdfPage page = pdfDoc.GetPage(i);
-    //                     //
-    //                     //     // Create a canvas for the current page
-    //                     //     PdfCanvas canvas = new PdfCanvas(page);
-    //                     //
-    //                     //     // Parse the content of the current page
-    //                     //     LocationTextExtractionStrategy strategy = new LocationTextExtractionStrategy();
-    //                     //     PdfCanvasProcessor parser = new PdfCanvasProcessor(strategy);
-    //                     //     parser.ProcessPageContent(page);
-    //                     //
-    //                     //     // Get the extracted text
-    //                     //     string pageContent = strategy.GetResultantText();
-    //                     //
-    //                     //     // Check if the page contains the text "Phone:"
-    //                     //     if (pageContent.Contains("Phone:"))
-    //                     //     {
-    //                     //         // Modify the text to append the dynamic value
-    //                     //         string modifiedContent = pageContent.Replace("Phone:", "Phone: " + dynamicValue);
-    //                     //
-    //                     //         // Clear existing content and add modified text
-    //                     //         canvas
-    //                     //             .BeginText()
-    //                     //             .SetFontAndSize(null, 12)
-    //                     //             .MoveText(100, 500) // Adjust coordinates as needed
-    //                     //             .ShowText(modifiedContent)
-    //                     //             .EndText();
-    //                     //     }
-    //                     // }
-    //                 }
-    //             }
-    //         }
-    //
-    //         System.Console.WriteLine("New PDF created successfully.");
-    //     }
-    //     catch (System.Exception ex)
-    //     {
-    //         
-    //     }
-    //     
-    // }
-    //
-    // private PdfDocument Contract(string path,string outputPath)
-    // {
-    //     
-    //     if (System.IO.File.Exists(path))
-    //     {
-    //         var sourceFileStream = System.IO.File.OpenRead(path);
-    //         var outputStream = new MemoryStream();
-    //
-    //         var pdf = new PdfDocument(new PdfReader(sourceFileStream), new PdfWriter(outputStream));
-    //         PdfAcroForm form = PdfAcroForm.GetAcroForm(pdf, true);
-    //         if (form != null)
-    //         {
-    //             IDictionary<string, PdfFormField> fields = form.GetFormFields();
-    //             PdfFormField toset;
-    //
-    //             fields.TryGetValue("Phone:", out toset);
-    //             toset.SetValue("123-456");
-    //             
-    //             pdf.Close();
-    //             outputStream.Position = 0;
-    //             using (FileStream fileStream = new FileStream(outputPath, FileMode.Create, FileAccess.Write))
-    //             {
-    //                 outputStream.WriteTo(fileStream);
-    //             }
-    //             // return pdf;
-    //             // return outputStream.ToArray();
-    //             // return File(bytes, System.Net.Mime.MediaTypeNames.Application.Octet, "OutputPdf.pdf");
-    //             // outputStream.Position = 0;
-    //             //
-    //             // // Save the modified PDF content to a new file
-    //             // using (FileStream fileStream = new FileStream(outputPath, FileMode.Create, FileAccess.Write))
-    //             // {
-    //             //     outputStream.WriteTo(fileStream);
-    //             // }
-    //             //
-    //             // return outputPath;
-    //         } 
-    //         // else
-    //         // {
-    //         //     pdf.Close();
-    //         //     sourceFileStream.Close();
-    //         //     return null; // Form not found, return null or handle accordingly
-    //         // }
-    //     }
-    //
-    //     return null;
-    // }
-    //
-    // private byte[] Contract2(string samplePath)
-    // {
-    //     if (System.IO.File.Exists(samplePath))
-    //     {
-    //         using (var sourceFileStream = System.IO.File.OpenRead(samplePath))
-    //         {
-    //             var outputStream = new MemoryStream();
-    //
-    //             var pdf = new PdfDocument(new PdfReader(sourceFileStream), new PdfWriter(outputStream));
-    //             PdfAcroForm form = PdfAcroForm.GetAcroForm(pdf, true); // Set the second parameter to true to create the form if it doesn't exist
-    //
-    //             if (form != null)
-    //             {
-    //                 IDictionary<string, PdfFormField> fields = form.GetFormFields();
-    //                 if (fields.TryGetValue("Phone", out var toSet))
-    //                 {
-    //                     toSet.SetValue("123-456");
-    //                 }
-    //                 
-    //                 outputStream.Position = 0;
-    //                 pdf.Close();
-    //                 return outputStream.ToArray();
-    //             }
-    //             else
-    //             {
-    //                 pdf.Close();
-    //                 sourceFileStream.Close();
-    //                 return null; // Form not found, return null or handle accordingly
-    //             }
-    //         }
-    //     }
-    //     else
-    //     {
-    //         return null; // File not found, return null or handle accordingly
-    //     }
-    // }
+    public async Task<ResultDTO<ICollection<BookingResponseDTO>>> GetAllBooking()
+    {
+        ResultDTO<ICollection<BookingResponseDTO>> resultDto = null;
+        ICollection<BookingResponseDTO> bookingResponseDtos = new List<BookingResponseDTO>();
+        var bookings = await _bookingRepository.GetAllAsync();
+        if (!bookings.IsNullOrEmpty())
+        {
+            foreach (var booking in bookings)
+            {
+                var bookingResponse = _mapper.Map<BookingResponseDTO>(booking);
+                bookingResponseDtos.Add(bookingResponse);
+            }
 
-    // private void FindAndReplce(string samplePath, string ouputPath, string searchText, string replaceText)
-    // {
-    //     try
-    //     {
-    //         // Initialize PDF document
-    //         using (PdfReader reader = new PdfReader(samplePath))
-    //         {
-    //             using (PdfWriter writer = new PdfWriter(ouputPath))
-    //             {
-    //                 using (PdfDocument pdfDoc = new PdfDocument(reader, writer))
-    //                 {
-    //                     for (int pageNum = 1; pageNum <= pdfDoc.GetNumberOfPages(); pageNum++)
-    //                     {
-    //                         // Extract text from the page
-    //                         string text = PdfTextExtractor.GetTextFromPage(pdfDoc.GetPage(pageNum));
-    //
-    //                         // Perform find and replace operation
-    //                         text = text.Replace(searchText, replaceText);
-    //
-    //                         // Create a Canvas for the page
-    //                         PdfCanvas canvas = new PdfCanvas(pdfDoc.GetPage(pageNum));
-    //
-    //                         // Add the modified text to the canvas
-    //                         canvas.BeginText()
-    //                             .SetFontAndSize(null, 12) // Set font and size as needed
-    //                             .MoveText(100, 100) // Set position as needed
-    //                             .ShowText(text)
-    //                             .EndText();
-    //                     }
-    //                 }
-    //             }
-    //         }
-    //
-    //         Console.WriteLine("Text replaced successfully.");
-    //     }
-    //     catch (Exception ex)
-    //     {
-    //         Console.WriteLine("An error occurred: " + ex.Message);
-    //     }
-    // }
+            resultDto = new ResultDTO<ICollection<BookingResponseDTO>>()
+            {
+                Data = bookingResponseDtos,
+                isSuccess = true,
+                Message = "Return list of booking"
+            };
+        }
+        else
+        {
+            resultDto = new ResultDTO<ICollection<BookingResponseDTO>>()
+            {
+                Data = bookingResponseDtos,
+                isSuccess = true,
+                Message = "We do not have any booking yet"
+            };
+        }
+
+        return resultDto;
+    }
+
+    public async Task<ResultDTO<ICollection<BookingDetailDTO>>> GetAllBookingDetailByBookingId(int bookingId)
+    {
+        ResultDTO<ICollection<BookingDetailDTO>> result = null;
+        ICollection<BookingDetailDTO> bookingDetailDtos = new List<BookingDetailDTO>();
+        var bookingDetails = await _bookingDetailRepository.GetListByProperty(x => x.BookingId == bookingId);
+        if (!bookingDetails.IsNullOrEmpty())
+        {
+            foreach (var bookingDetail in bookingDetails)
+            {
+                var bookingDetailMapper = _mapper.Map<BookingDetailDTO>(bookingDetail);
+                bookingDetailDtos.Add(bookingDetailMapper);
+            }
+
+            result = new ResultDTO<ICollection<BookingDetailDTO>>()
+            {
+                Data = bookingDetailDtos,
+                isSuccess = true,
+                Message = "Return list of booking detail by booking Id"
+            };
+        }
+        else
+        {
+            result = new ResultDTO<ICollection<BookingDetailDTO>>()
+            {
+                Data = bookingDetailDtos,
+                isSuccess = true,
+                Message = "No booking Detail"
+            };
+        }
+        
+        return result;
+    }
 
     private Microsoft.Office.Interop.Word.Application app;
     private Microsoft.Office.Interop.Word.Document doc;
@@ -492,4 +396,162 @@ public class BookingService : IBookingService
         this.app.Selection.Find.Execute(ref FindText, true, true, false, false
             , false, true, false, 1, ref ReplaceText, 2, false, false, false, false);
     }
+    
+    public async Task<bool> CancelByPH(int BookingId)
+    {
+        
+        var booking = await _bookingRepository.GetByIdAsync(BookingId);
+        // var bookingDetails = await _bookingDetailRepository.GetListByProperty(x => x.BookingId == BookingId);
+        // BookingDetail FirstBookingDetail = bookingDetails.ElementAt(0);
+        // BookingDetailDTO bookingDetailDto = _mapper.Map<BookingDetailDTO>(FirstBookingDetail);
+        // implement refund
+        var deposits = await _depositRepository.GetListByProperty(x => x.BookingId == BookingId);
+        if (deposits.Count() > 1)
+        {
+            // implement trả toàn phần in total price của booking
+            foreach (var deposit in deposits)
+            {
+                var transaction = await _transactionRepository.GetByProperty(x => x.DepositId == deposit.DepositId);
+                transaction.Status = TransactionStatus.CANCELED;
+                _ = await _transactionRepository.UpdateAsync(transaction);
+            }
+            booking.Status = BookingStatus.CANCELED;
+            _ = await _bookingRepository.UpdateAsync(booking);
+            
+            return true;
+        }
+        else if (deposits.Count() == 1)
+        {
+            var deposit = deposits.ElementAt(0);
+            // implement get amount của transaction
+            var transaction = await _transactionRepository.GetByProperty(x => x.DepositId == deposit.DepositId);
+            if (transaction != null)
+            {
+                transaction.Status = TransactionStatus.CANCELED;
+                booking.Status = BookingStatus.CANCELED;
+                _ = await _transactionRepository.UpdateAsync(transaction);
+                _ = await _bookingRepository.UpdateAsync(booking);
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    // private async Task<string> RefundWithOrderId(int bookingId)
+    // {
+    //     return null;
+    // }
+    
+    //  public async Task<HttpResponseMessage> QueryVNPAY(string vnp_txnRef, long transactionDate, HttpRequest req, HttpResponse resp)
+    // {
+    //     try
+    //     {
+    //         string vnp_RequestId = VnPayHelper.GetRandomNumber(8);
+    //         string vnp_Version = "2.1.0";
+    //         string vnp_Command = "pay";
+    //         string vnp_TmnCode = _configuration["Vnpay:Tmncode"];
+    //         string vnp_TxnRef = vnp_txnRef;
+    //         string vnp_OrderInfo = $"Thanh toán Booking Bitrhday Party";
+    //         string vnp_TransDate = transactionDate.ToString();
+    //         DateTime now = DateTime.Now;
+    //         TimeZoneInfo localZone = TimeZoneInfo.FindSystemTimeZoneById("Etc/GMT+7");
+    //         DateTime localTime = TimeZoneInfo.ConvertTime(now, TimeZoneInfo.Local, localZone);
+    //         string vnp_CreateDate = localTime.ToString("yyyyMMddHHmmss");
+    //         string vnp_IpAddr = VnPayHelper.GetIpAddress(req);
+    //
+    //         var vnp_Params = new
+    //         {
+    //             vnp_RequestId,
+    //             vnp_Version,
+    //             vnp_Command,
+    //             vnp_TmnCode,
+    //             vnp_TxnRef,
+    //             vnp_OrderInfo,
+    //             vnp_TransactionDate = vnp_TransDate,
+    //             vnp_CreateDate,
+    //             vnp_IpAddr
+    //         };
+    //
+    //         string hash_Data = $"{vnp_RequestId}|{vnp_Version}|{vnp_Command}|{vnp_TmnCode}|{vnp_TxnRef}|{vnp_TransDate}|{vnp_CreateDate}|{vnp_IpAddr}|{vnp_OrderInfo}";
+    //         string vnp_SecureHash = VnPayHelper.HmacSHA512(_configuration["Vnpay:HashSecret"], hash_Data);
+    //
+    //         var vnpJson = JsonConvert.SerializeObject(new { vnp_Params, vnp_SecureHash });
+    //
+    //         var url = new Uri(VnPayHelper.vnp_apiUrl);
+    //         var request = WebRequest.CreateHttp(url);
+    //         request.Method = "POST";
+    //         request.ContentType = "application/json";
+    //
+    //         using (var streamWriter = new StreamWriter(request.GetRequestStream()))
+    //         {
+    //             streamWriter.Write(vnpJson);
+    //             streamWriter.Flush();
+    //             streamWriter.Close();
+    //         }
+    //
+    //         var httpResponse = (HttpWebResponse)await request.GetResponseAsync();
+    //
+    //         var responseStream = httpResponse.GetResponseStream();
+    //         var streamReader = new StreamReader(responseStream ?? throw new InvalidOperationException(), Encoding.UTF8);
+    //         var responseString = streamReader.ReadToEnd();
+    //         
+    //         return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(responseString) };
+    //     }
+    //     catch (Exception e)
+    //     {
+    //         Console.WriteLine(e.Message);
+    //         return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable) { Content = new StringContent("ERROR SERVER") };
+    //     }
+    // }
+    //  
+    //  public async Task<string> QueryVNpayWithOrderID(string orderId)
+    //  {
+    //      try
+    //      {
+    //          if (!long.TryParse(orderId, out long parseOrderId))
+    //          {
+    //              return "Invalid order ID format";
+    //          }
+    //
+    //          var order = await _orderRepository.GetByIdAsync(parseOrderId);
+    //          if (order == null)
+    //          {
+    //              return "Order not found";
+    //          }
+    //
+    //          var transaction = await _transactionRepository.GetByIdAsync(order.TransactionId);
+    //          if (transaction == null)
+    //          {
+    //              return "Transaction not found";
+    //          }
+    //
+    //          var callingResult = await _vnPayService.QueryVNPAY(transaction.VnpTxnRef, transaction.VnpTransactionDate);
+    //          if (callingResult.IsSuccessStatusCode)
+    //          {
+    //              return await callingResult.Content.ReadAsStringAsync();
+    //          }
+    //          else
+    //          {
+    //              return "VNPAY SERVICE ERROR";
+    //          }
+    //      }
+    //      catch (FormatException e)
+    //      {
+    //          Console.WriteLine(e.Message);
+    //          return "ERROR PARSING ORDER ID";
+    //      }
+    //      catch (NullReferenceException e)
+    //      {
+    //          Console.WriteLine(e.Message);
+    //          return "ERROR NULL REFERENCE";
+    //      }
+    //      catch (Exception e)
+    //      {
+    //          Console.WriteLine(e.Message);
+    //          return "INTERNAL SERVER ERROR";
+    //      }
+    //  }
+    
 }

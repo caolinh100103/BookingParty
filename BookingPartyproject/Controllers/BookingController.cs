@@ -35,6 +35,26 @@ public class BookingController : ControllerBase
         var bookingResponse = await _bookingService.CreateBooking(bookingDto, tokenAuth);
         return Ok(bookingResponse);
     }
-    // [HttpGet]
-    // public async Task<IActionResult> GetBoookingByUserId
+
+    [HttpGet]
+    public async Task<IActionResult> GetAllBooking()
+    {
+        var result = await _bookingService.GetAllBooking();
+        return Ok(result);
+    }
+
+    [HttpGet("bookingdetails")]
+    public async Task<IActionResult> GetAllBookingDetail(int bookingId)
+    {
+        var result = await _bookingService.GetAllBookingDetailByBookingId(bookingId);
+        return Ok(result);
+    }
+    //
+    // [HttpPut]
+    // [Authorize(Roles = "Party Host")]
+    // public async Task<IActionResult> CancelByPartyHost([FromBody] int BookingId)
+    // {
+    //     var result = await _bookingService.CancelByPH(BookingId);
+    //     
+    // }
 }

@@ -20,6 +20,13 @@ namespace BookingPartyproject.Helper
             CreateMap<User, UserReponseDTO>();
             CreateMap<UserDTO, User>();
             CreateMap<User, UserDTO>();
+            CreateMap<NotificationResponseDTO, Notification>();
+            CreateMap<Notification, NotificationResponseDTO>();
+            CreateMap<BookingDetail, BookingDetailDTO>();
+            CreateMap<BookingDetailDTO, BookingDetail>();
+            CreateMap<TransactionHistory, TransactionCreatedDTO>();
+            CreateMap<Booking, BookingResponseDTO>();
+            CreateMap<BookingResponseDTO, Booking>();
         }
     }
 }

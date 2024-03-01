@@ -19,5 +19,6 @@ namespace DataAccessLayer.Interface
         Task<T> GetByProperty(Expression<Func<T, bool>> predicate);
         Task<ICollection<T>> GetListByProperty(Expression<Func<T, bool>> predicate);
         Task<PaginatedResult<T>> GetPaginatedListAsync(int page, int pageSize);
+        T GetLast<TKey>(Expression<Func<T, TKey>> keySelector);
     }
 }

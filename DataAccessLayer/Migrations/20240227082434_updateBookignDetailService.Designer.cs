@@ -4,6 +4,7 @@ using DataAccessLayer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DataAccessLayer.Migrations
 {
     [DbContext(typeof(BookingPartyDataContext))]
-    partial class BookingPartyDataContextModelSnapshot : ModelSnapshot
+    [Migration("20240227082434_updateBookignDetailService")]
+    partial class updateBookignDetailService
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -47,7 +50,7 @@ namespace DataAccessLayer.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Bookings", (string)null);
+                    b.ToTable("Bookings");
                 });
 
             modelBuilder.Entity("Model.Entity.BookingDetail", b =>
@@ -81,7 +84,7 @@ namespace DataAccessLayer.Migrations
 
                     b.HasIndex("ServiceId");
 
-                    b.ToTable("BookingDetail", (string)null);
+                    b.ToTable("BookingDetail");
                 });
 
             modelBuilder.Entity("Model.Entity.Category", b =>
@@ -101,7 +104,7 @@ namespace DataAccessLayer.Migrations
 
                     b.HasKey("CategoryId");
 
-                    b.ToTable("Categories", (string)null);
+                    b.ToTable("Categories");
                 });
 
             modelBuilder.Entity("Model.Entity.Contract", b =>
@@ -127,7 +130,7 @@ namespace DataAccessLayer.Migrations
                     b.HasIndex("BookingServiceId")
                         .IsUnique();
 
-                    b.ToTable("Contracts", (string)null);
+                    b.ToTable("Contracts");
                 });
 
             modelBuilder.Entity("Model.Entity.Deposit", b =>
@@ -156,7 +159,7 @@ namespace DataAccessLayer.Migrations
 
                     b.HasIndex("BookingId");
 
-                    b.ToTable("Deposit", (string)null);
+                    b.ToTable("Deposit");
                 });
 
             modelBuilder.Entity("Model.Entity.Facility", b =>
@@ -178,7 +181,7 @@ namespace DataAccessLayer.Migrations
 
                     b.HasIndex("RoomId");
 
-                    b.ToTable("Facility", (string)null);
+                    b.ToTable("Facility");
                 });
 
             modelBuilder.Entity("Model.Entity.Feedback", b =>
@@ -219,7 +222,7 @@ namespace DataAccessLayer.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Feedbacks", (string)null);
+                    b.ToTable("Feedbacks");
                 });
 
             modelBuilder.Entity("Model.Entity.Image", b =>
@@ -249,7 +252,7 @@ namespace DataAccessLayer.Migrations
 
                     b.HasIndex("ServiceId");
 
-                    b.ToTable("Images", (string)null);
+                    b.ToTable("Images");
                 });
 
             modelBuilder.Entity("Model.Entity.Item", b =>
@@ -272,7 +275,7 @@ namespace DataAccessLayer.Migrations
 
                     b.HasKey("ItemId");
 
-                    b.ToTable("Items", (string)null);
+                    b.ToTable("Items");
                 });
 
             modelBuilder.Entity("Model.Entity.Notification", b =>
@@ -301,7 +304,7 @@ namespace DataAccessLayer.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Notifications", (string)null);
+                    b.ToTable("Notifications");
                 });
 
             modelBuilder.Entity("Model.Entity.Promotion", b =>
@@ -339,7 +342,7 @@ namespace DataAccessLayer.Migrations
 
                     b.HasIndex("ServiceId");
 
-                    b.ToTable("Promotions", (string)null);
+                    b.ToTable("Promotions");
                 });
 
             modelBuilder.Entity("Model.Entity.Role", b =>
@@ -356,7 +359,7 @@ namespace DataAccessLayer.Migrations
 
                     b.HasKey("RoleId");
 
-                    b.ToTable("Roles", (string)null);
+                    b.ToTable("Roles");
                 });
 
             modelBuilder.Entity("Model.Entity.Room", b =>
@@ -395,7 +398,7 @@ namespace DataAccessLayer.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Rooms", (string)null);
+                    b.ToTable("Rooms");
                 });
 
             modelBuilder.Entity("Model.Entity.Service", b =>
@@ -436,7 +439,7 @@ namespace DataAccessLayer.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Services", (string)null);
+                    b.ToTable("Services");
                 });
 
             modelBuilder.Entity("Model.Entity.ServiceAvailableInDay", b =>
@@ -462,7 +465,7 @@ namespace DataAccessLayer.Migrations
 
                     b.HasIndex("ServiceId");
 
-                    b.ToTable("ServiceAvailableInDay", (string)null);
+                    b.ToTable("ServiceAvailableInDay");
                 });
 
             modelBuilder.Entity("Model.Entity.ServiceItem", b =>
@@ -477,7 +480,7 @@ namespace DataAccessLayer.Migrations
 
                     b.HasIndex("ItemId");
 
-                    b.ToTable("ServiceItem", (string)null);
+                    b.ToTable("ServiceItem");
                 });
 
             modelBuilder.Entity("Model.Entity.TransactionHistory", b =>
@@ -487,9 +490,6 @@ namespace DataAccessLayer.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TransactionHistoryId"));
-
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("BankCode")
                         .HasColumnType("nvarchar(max)");
@@ -509,8 +509,8 @@ namespace DataAccessLayer.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("Txn_ref")
-                        .HasColumnType("int");
+                    b.Property<string>("Txn_ref")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int?>("UserId")
                         .HasColumnType("int");
@@ -522,7 +522,7 @@ namespace DataAccessLayer.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("TransactionHistories", (string)null);
+                    b.ToTable("TransactionHistories");
                 });
 
             modelBuilder.Entity("Model.Entity.User", b =>
@@ -562,7 +562,7 @@ namespace DataAccessLayer.Migrations
 
                     b.HasIndex("RoleId");
 
-                    b.ToTable("Users", (string)null);
+                    b.ToTable("Users");
                 });
 
             modelBuilder.Entity("Model.Entity.Booking", b =>

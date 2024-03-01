@@ -30,10 +30,7 @@ namespace DataAccessLayer
         {
             modelBuilder.Entity<ServiceItem>()
                 .HasKey(x => new { x.ServiceId, x.ItemId });
-
-            modelBuilder.Entity<BookingDetail>()
-               .HasKey(x => new { x.ServiceId, x.BookingId });
-
+            
             modelBuilder.Entity<ServiceItem>()
                .HasOne(x => x.Service)
                .WithMany(x => x.ServiceItems)
@@ -159,6 +156,9 @@ namespace DataAccessLayer
            modelBuilder.Entity<ServiceAvailableInDay>()
                .Property(x => x.NumberOfAvailableInDay)
                .HasDefaultValue(5);
+           modelBuilder.Entity<BookingDetail>()
+               .Property(x => x.ServiceId)
+               .IsRequired(false);
         }
     }
 }

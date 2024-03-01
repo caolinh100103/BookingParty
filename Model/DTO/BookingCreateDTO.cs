@@ -6,5 +6,5 @@ public class BookingCreateDTO
     public DateTime EndTIme { get; set; }
     public decimal TotalPrice { get; set; }
     public int RoomId { get; set; }
-    public IEnumerable<int> ServiceIds { get; set; }
+    public IEnumerable<int>? ServiceIds { get; set; }
 }

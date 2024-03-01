@@ -66,6 +66,7 @@ public class DepositService : IDepositService
                     PaymentMethod = depositCreatedDto.TransactionCreatedDto.PaymentMethod,
                     BankCode = null,
                     TransactionDate = depositCreatedDto.TransactionCreatedDto.TransactionDate,
+                    Amount = depositCreatedDto.TransactionCreatedDto.Amount
                 };
                 var transactionMapper = _mapper.Map<TransactionHistory>(transactionCreatedDto);
                 var transaction = await _transactionRepository.AddAsync(transactionMapper);
@@ -94,7 +95,7 @@ public class DepositService : IDepositService
                     return result;
                 }
             }
-            else if (depositCreatedDto.TransactionCreatedDto.PaymentMethod.Equals("VNPAY"))
+            else if (depositCreatedDto.TransactionCreatedDto.PaymentMethod.Equals("VNPAY") && depositCreatedDto.TransactionCreatedDto.Status == "00")
             {
                 TransactionCreatedDTO transactionCreatedDto = new TransactionCreatedDTO
                 {
@@ -102,6 +103,7 @@ public class DepositService : IDepositService
                     PaymentMethod = depositCreatedDto.TransactionCreatedDto.PaymentMethod,
                     BankCode = depositCreatedDto.TransactionCreatedDto.BankCode,
                     TransactionDate = depositCreatedDto.TransactionCreatedDto.TransactionDate,
+                    Amount = depositCreatedDto.TransactionCreatedDto.Amount
                 };
                 var transactionMapper = _mapper.Map<TransactionHistory>(transactionCreatedDto);
                 var transaction = await _transactionRepository.AddAsync(transactionMapper);

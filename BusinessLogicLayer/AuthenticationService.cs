@@ -1,7 +1,9 @@
+using AutoMapper;
 using BusinessLogicLayer.Enum;
 using BusinessLogicLayer.Helper;
 using BusinessLogicLayer.Interfaces;
 using DataAccessLayer.Interface;
+using Model.DTO;
 using Model.Entity;
 
 namespace BusinessLogicLayer;
@@ -10,11 +12,14 @@ public class AuthenticationService : IAuthenticationService
 {
     private readonly IGenericRepository<User> _userRepository;
     private readonly IGenericRepository<Role> _roleRepository;
+    private readonly IMapper _mapper;
 
-    public AuthenticationService(IGenericRepository<User> userRepository, IGenericRepository<Role> roleRepository)
+    public AuthenticationService(IGenericRepository<User> userRepository, IGenericRepository<Role> roleRepository,
+        IMapper mapper)
     {
         _userRepository = userRepository;
         _roleRepository = roleRepository;
+        _mapper = mapper;
     }
     public async Task<User> Login(string email, string password)
     {
