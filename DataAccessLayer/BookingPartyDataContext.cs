@@ -25,6 +25,8 @@ namespace DataAccessLayer
         public virtual DbSet<TransactionHistory> TransactionHistories { get; set; }
         public virtual DbSet<User> Users { get; set; }
         public virtual DbSet<Room> Rooms { get; set; }
+        public virtual DbSet<ServiceAvailableInDay> ServiceAvailableInDay { get; set; }
+        public virtual DbSet<Facility> Facility { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -158,6 +160,12 @@ namespace DataAccessLayer
                .HasDefaultValue(5);
            modelBuilder.Entity<BookingDetail>()
                .Property(x => x.ServiceId)
+               .IsRequired(false);
+           modelBuilder.Entity<Image>()
+               .Property(x => x.ServiceId)
+               .IsRequired(false);
+           modelBuilder.Entity<Image>()
+               .Property(x => x.RoomId)
                .IsRequired(false);
         }
     }

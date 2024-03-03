@@ -1,5 +1,3 @@
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
 using BusinessLogicLayer.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -49,12 +47,13 @@ public class BookingController : ControllerBase
         var result = await _bookingService.GetAllBookingDetailByBookingId(bookingId);
         return Ok(result);
     }
-    //
-    // [HttpPut]
-    // [Authorize(Roles = "Party Host")]
-    // public async Task<IActionResult> CancelByPartyHost([FromBody] int BookingId)
-    // {
-    //     var result = await _bookingService.CancelByPH(BookingId);
-    //     
-    // }
+    
+    [HttpPost("CancelByCustomer")]
+    [Authorize(Roles = "Customer")]
+    public async Task<IActionResult> CancelByCustomer([FromBody] int BookingId)
+    {
+        var result = await _bookingService.CancelByCustomer(BookingId);
+        return Ok(result);
+    }
+    
 }

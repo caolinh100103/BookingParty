@@ -6,4 +6,6 @@ public interface IRoomService
 {
     Task<ResultDTO<ICollection<RoomResponse>>> GetRooms();
     Task<ResultDTO<ICollection<RoomResponse>>> GetRoomsWithPaging(int page, int pageSize);
+    Task<ResultDTO<int>> CreateRoom(RoomCreatedDTO roomCreatedDto);
+    Task<ResultDTO<bool>> DisableRoom(int RoomId);
 }

@@ -27,6 +27,12 @@ namespace BookingPartyproject.Helper
             CreateMap<TransactionHistory, TransactionCreatedDTO>();
             CreateMap<Booking, BookingResponseDTO>();
             CreateMap<BookingResponseDTO, Booking>();
+            CreateMap<ImageDTO, Image>();
+            CreateMap<Image, ImageDTO>();
+            CreateMap<Service, ServiceCreatedDTO>();
+            CreateMap<ServiceCreatedDTO, Service>();
+            CreateMap<Room, RoomCreatedDTO>();
+            CreateMap<RoomCreatedDTO, Room>();
         }
     }
 }

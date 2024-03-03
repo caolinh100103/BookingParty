@@ -1,5 +1,6 @@
 using BusinessLogicLayer.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Model.DTO;
 
 namespace BookingPartyproject.Controllers;
 [Route("api/[controller]")]
@@ -41,5 +42,23 @@ public class RoomController : ControllerBase
         }
 
         return Ok(response);
+    }
+    [HttpPost]
+    public async Task<IActionResult> CreateRoom([FromForm] RoomCreatedDTO roomDto)
+    {
+        var checkRoom = await _roomService.CreateRoom(roomDto);
+        return Ok(checkRoom);
+    }
+
+    [HttpDelete]
+    public async Task<IActionResult> DisableRoom([FromBody] int roomId)
+    {
+        var result = await _roomService.DisableRoom(roomId);
+        if (result.Data)
+        {
+            return Ok(result);
+        }
+
+        return BadRequest();
     }
 }

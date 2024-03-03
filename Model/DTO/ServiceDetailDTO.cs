@@ -1,6 +1,6 @@
 namespace Model.DTO;
 
-public class ServiceResponseDTO
+public class ServiceDetailDTO
 {
     public int ServiceId { get; set; }
     public string ServiceTitle { get; set; }
@@ -10,7 +10,4 @@ public class ServiceResponseDTO
     public int Status { get; set; }
     public UserDTO User { get; set; }
     public int CategoryId { get; set; }
-    public ICollection<ImageDTO> Images { get; set; }
-    public ICollection<FeedbackReponseDTO>? Feedbacks { get; set; }
-    public decimal Sale_Price { get; set; }
 }

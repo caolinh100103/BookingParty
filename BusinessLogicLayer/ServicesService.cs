@@ -1,5 +1,7 @@
-﻿using BusinessLogicLayer.Interfaces;
+﻿using System.Collections;
+using BusinessLogicLayer.Interfaces;
 using AutoMapper;
+using BusinessLogicLayer.Helper;
 using DataAccessLayer.Interface;
 using Microsoft.IdentityModel.Tokens;
 using Model.DTO;
@@ -28,18 +30,130 @@ namespace BusinessLogicLayer
             _mapper = mapper;
         }
 
-        public async Task<int> CreateService(ServiceDTO serviceDto)
+        public async Task<ResultDTO<ServiceDTO>> CreateService(ServiceCreatedDTO serviceCreatedDto)
         {
-            var service = _mapper.Map<Service>(serviceDto);
-            var serviceCreated = await _serviceRepository.AddAsync(service);
-            var checkCreated = (serviceCreated != null) ? 1 : 0;
-            return checkCreated;
+            ResultDTO<bool> result = null;
+            ICollection<string> imageBase64Str = new List<string>();
+            if (!serviceCreatedDto.Images.IsNullOrEmpty())
+            {
+                foreach (var image in serviceCreatedDto.Images)
+                {
+                    var imageString = Base64Converter.ConvertToBase64(image);
+                    imageBase64Str.Add(imageString);
+                }
+            }
+
+            var serviceMapper = new Service()
+            {
+                UserId = serviceCreatedDto.UserId,
+                Price = serviceCreatedDto.Price,
+                Description = serviceCreatedDto.Description,
+                ServiceName = serviceCreatedDto.ServiceName,
+                Status = 0,
+                CategoryId = serviceCreatedDto.CategoryId,
+                ServiceTitle = serviceCreatedDto.ServiceTitle
+            };
+            var service = await _serviceRepository.AddAsync(serviceMapper);
+            if (service != null)
+            {
+                foreach (var str in imageBase64Str)
+                {
+                    Image image = new Image()
+                    {
+                        ServiceId = service.ServiceId,
+                        ImageBase64 = str,
+                        Status = 1,
+                    };
+                    _ = _imageRepository.AddAsync(image);
+                }
+
+                return new ResultDTO<ServiceDTO>()
+                {
+                    Data = null,
+                    isSuccess = true,
+                    Message = "Created service successfully"
+                };
+            }
+
+            return new ResultDTO<ServiceDTO>()
+            {
+                Data = null,
+                isSuccess = false,
+                Message = "Can not created service successfully"
+            };
+        }
+
+        public async Task<ResultDTO<bool>> DisableService(int serviceId)
+        {
+            var service = await _serviceRepository.GetByIdAsync(serviceId);
+            if (service != null && service.Status == 1)
+            {
+                service.Status = 0;
+                _ = await _serviceRepository.UpdateAsync(service);
+                return new ResultDTO<bool>()
+                {
+                    Data = true,
+                    isSuccess = true,
+                    Message = "Disable service successfully"
+                };
+            }
+
+            if (service.Status == 0)
+            {
+                return new ResultDTO<bool>()
+                {
+                    Data = true,
+                    isSuccess = true,
+                    Message = "The service has been disabled"
+                };
+            }
+
+            return  new ResultDTO<bool>()
+            {
+                Data = true,
+                isSuccess = true,
+                Message = "Internal Server"
+            };
+        }
+        
+        public async Task<bool> Update(ServiceUpdateDTO serviceUpdateDto)
+        {
+            ICollection<String> imageBase64Str = new List<String>();
+            var service = await _serviceRepository.GetByIdAsync(serviceUpdateDto.ServiceId);
+            if (service == null)
+            {
+                return false;
+            }
+            if (service != null)
+            {
+                service.ServiceTitle = serviceUpdateDto.ServiceTitle;
+                service.ServiceName = serviceUpdateDto.ServiceName;
+                service.Description = serviceUpdateDto.Description;
+                service.UserId = serviceUpdateDto.UserId;
+                service.Price = serviceUpdateDto.Price;
+                service.CategoryId = serviceUpdateDto.CategoryId;
+
+                _ = await _serviceRepository.UpdateAsync(service);
+            }
+            else if (!serviceUpdateDto.Images.IsNullOrEmpty() && service != null)
+            {
+                foreach (var image in serviceUpdateDto.Images)
+                {
+                    var imageString = Base64Converter.ConvertToBase64(image.Image);
+                    var imageGet = await _imageRepository.GetByIdAsync(image.ImageId);
+                    imageGet.ImageBase64 = imageString;
+                    _ = _imageRepository.UpdateAsync(imageGet);
+                }
+            }
+
+            return true;
         }
 
         public async Task<ICollection<ServiceResponseDTO>> GetAllServices()
         {
             var services = await _serviceRepository.GetAllAsync();
             ICollection<ServiceResponseDTO> response = new List<ServiceResponseDTO>();
+            ICollection<ImageDTO> imageDtos = new List<ImageDTO>();
             ICollection<FeedbackReponseDTO> feedbackReponseDtos = new List<FeedbackReponseDTO>();
             foreach (var service in services)
             {
@@ -80,12 +194,15 @@ namespace BusinessLogicLayer
                     }
                 }
                 var images = await _imageRepository.GetListByProperty(x => x.ServiceId == service.ServiceId);
-                if (images != null)
+                if (!images.IsNullOrEmpty())
                 {
                     foreach (var image in images)
                     {
-                        serviceResponse.ImagePaths.Add(image.ImagePath);
+                        var iamgeMapper = _mapper.Map<ImageDTO>(image);
+                        imageDtos.Add(iamgeMapper);
                     }
+
+                    serviceResponse.Images = imageDtos;
                 }
                 response.Add(serviceResponse);
             }
@@ -97,6 +214,8 @@ namespace BusinessLogicLayer
         {
             var servicesPages = await _serviceRepository.GetPaginatedListAsync(page, pageSize);
             ICollection<ServiceResponseDTO> response = new List<ServiceResponseDTO>();
+            ICollection<String> imageStr = new List<String>();
+            ICollection<ImageDTO> imageDtos = new List<ImageDTO>();
             ICollection<FeedbackReponseDTO> feedbackReponseDtos = new List<FeedbackReponseDTO>();
             foreach (var service in servicesPages.Items)
             {
@@ -137,12 +256,15 @@ namespace BusinessLogicLayer
                     }
                 }
                 var images = await _imageRepository.GetListByProperty(x => x.ServiceId == service.ServiceId);
-                if (images != null)
+                if (!images.IsNullOrEmpty())
                 {
                     foreach (var image in images)
                     {
-                        serviceResponse.ImagePaths.Add(image.ImagePath);
+                        var iamgeMapper = _mapper.Map<ImageDTO>(image);
+                        imageDtos.Add(iamgeMapper);
                     }
+
+                    serviceResponse.Images = imageDtos;
                 }
                 response.Add(serviceResponse);
             }

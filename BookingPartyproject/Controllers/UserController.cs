@@ -40,5 +40,5 @@ public class UserController : ControllerBase
     {
         var result = await _userService.GetAllUser();
         return Ok(result);
-    } 
+    }    
 }

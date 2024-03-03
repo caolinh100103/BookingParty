@@ -16,6 +16,8 @@ using Microsoft.Office.Interop.Word;
 using System.Text;
 using Newtonsoft.Json;
 using System.Net;
+using Newtonsoft.Json.Linq;
+using Org.BouncyCastle.Utilities;
 
 namespace BusinessLogicLayer;
 
@@ -36,9 +38,12 @@ public class BookingService : IBookingService
 
     private string samplePathContract = "D:/FPT/CN7/SWD392/testPdf/sample.pdf";
     private string outputPathContract = "D:/FPT/CN7/SWD392/testPdf/output/Output.pdf";
-        public BookingService(IGenericRepository<Booking> bookingRepository, IGenericRepository<BookingDetail> bookingDetailRepository,IGenericRepository<Service> serviceRepository
-        , IGenericRepository<Room> roomRepository, IGenericRepository<User> userRepository, IGenericRepository<Contract> contractRepository,
-        IGenericRepository<Notification> notificationRepository,IMapper mapper,
+
+    public BookingService(IGenericRepository<Booking> bookingRepository,
+        IGenericRepository<BookingDetail> bookingDetailRepository, IGenericRepository<Service> serviceRepository
+        , IGenericRepository<Room> roomRepository, IGenericRepository<User> userRepository,
+        IGenericRepository<Contract> contractRepository,
+        IGenericRepository<Notification> notificationRepository, IMapper mapper,
         IGenericRepository<ServiceAvailableInDay> serviceAvailableRepository,
         IGenericRepository<Deposit> depositRepository,
         IGenericRepository<TransactionHistory> transactionRepository,
@@ -56,7 +61,7 @@ public class BookingService : IBookingService
         _mapper = mapper;
         _configuration = configuration;
     }
-    
+
     public async Task<ResultDTO<BookingResponseDTO>> CreateBooking(BookingCreateDTO bookingDto, string token)
     {
         if (bookingDto.StartTime <= DateTime.Now || bookingDto.EndTIme <= DateTime.Now)
@@ -80,7 +85,7 @@ public class BookingService : IBookingService
             };
             return bookingResponse;
         }
-        
+
         var days = (bookingDto.StartTime - DateTime.Now).Days;
         if (days < 30)
         {
@@ -92,6 +97,7 @@ public class BookingService : IBookingService
             };
             return bookingResponse;
         }
+
         if (bookingDto.TotalPrice >= 100000000)
         {
             if (days < 60)
@@ -106,7 +112,7 @@ public class BookingService : IBookingService
             }
         }
 
-        var hours = (bookingDto.EndTIme - bookingDto.StartTime).Hours;
+        var hours = (bookingDto.EndTIme - bookingDto.StartTime).TotalHours;
         if (hours > 4)
         {
             ResultDTO<BookingResponseDTO> bookingResponse = new ResultDTO<BookingResponseDTO>
@@ -117,9 +123,10 @@ public class BookingService : IBookingService
             };
             return bookingResponse;
         }
+
         // Decode the token to access claims
         var tokenHandler = new JwtSecurityTokenHandler();
-        var securityToken  = tokenHandler.ReadToken(token) as SecurityToken;
+        var securityToken = tokenHandler.ReadToken(token) as SecurityToken;
 
         // Access the user's email claim
         string emailClaim = null;
@@ -128,6 +135,7 @@ public class BookingService : IBookingService
             // Access the user's email claim
             emailClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
         }
+
         var user = await _userRepository.GetByProperty(x => x.Email.Equals(emailClaim));
         ICollection<ServiceDTO> services = null;
         if (bookingDto.ServiceIds == null)
@@ -154,6 +162,7 @@ public class BookingService : IBookingService
         {
             room = await _roomRepository.GetByIdAsync(bookingDto.RoomId);
         }
+
         var roomDto = _mapper.Map<RoomDTO>(room);
         // Check the same categories
         if (services != null)
@@ -172,6 +181,7 @@ public class BookingService : IBookingService
                 }
             }
         }
+
         //Check phong co bi trung khong
         // var room = bookingDto.Room;
         if (services != null)
@@ -193,14 +203,17 @@ public class BookingService : IBookingService
                 }
             }
         }
-        var bookingDetailList = await _bookingDetailRepository.GetListByProperty(x => x.RoomId == roomDto.RoomId); // Find the Room in booking detail
-        
+
+        var bookingDetailList =
+            await _bookingDetailRepository.GetListByProperty(x =>
+                x.RoomId == roomDto.RoomId); // Find the Room in booking detail
+
         if (bookingDetailList.Count > 0)
         {
             foreach (var bookingDetail in bookingDetailList)
             {
                 if (bookingDto.StartTime <= bookingDetail.StartTime && bookingDetail.StartTime <= bookingDto.EndTIme ||
-                    bookingDto.StartTime <= bookingDetail.EndTIme && bookingDetail.EndTIme <= bookingDto.EndTIme 
+                    bookingDto.StartTime <= bookingDetail.EndTIme && bookingDetail.EndTIme <= bookingDto.EndTIme
                     || bookingDto.StartTime <= bookingDetail.StartTime && bookingDto.EndTIme >= bookingDetail.EndTIme)
                 {
                     ResultDTO<BookingResponseDTO> bookingResponse = new ResultDTO<BookingResponseDTO>
@@ -217,7 +230,7 @@ public class BookingService : IBookingService
         //Make booking
         var bookingMapper = new Booking
         {
-            Status = BookingStatus.PENDING,
+            Status = BookingStatus.BOOKED,
             BookingDate = DateTime.Now,
             UserId = user.UserId,
             TotalPrice = bookingDto.TotalPrice
@@ -256,7 +269,8 @@ public class BookingService : IBookingService
             StartTime = bookingDto.EndTIme,
             EndTIme = bookingDto.EndTIme,
             Room = roomDto,
-            Services = services
+            Services = services,
+            BookingDate = DateTime.Now
         };
         //make contract
         // createContract();
@@ -267,7 +281,7 @@ public class BookingService : IBookingService
         //     BookingServiceId = bookingCreated.BookingId,
         // };
         // var conntractCreated = await _contractRepository.AddAsync(contract);
-        
+
         ResultDTO<BookingResponseDTO> response = new ResultDTO<BookingResponseDTO>
         {
             Message = "Created Successfully",
@@ -283,8 +297,9 @@ public class BookingService : IBookingService
             SentTime = DateTime.Now
         };
         var notification = await _notificationRepository.AddAsync(noti);
-        if (services != null) {
-            foreach(var service in services)
+        if (services != null)
+        {
+            foreach (var service in services)
             {
                 var bookingServiceInDay = await _serviceAvailableRepository.GetByProperty(x =>
                     x.ServiceId == service.ServiceId
@@ -299,10 +314,12 @@ public class BookingService : IBookingService
                     };
                     bookingServiceInDay = await _serviceAvailableRepository.AddAsync(serviceAvailableInDay);
                 }
+
                 bookingServiceInDay.NumberOfAvailableInDay -= 1;
                 _ = await _serviceAvailableRepository.UpdateAsync(bookingServiceInDay);
             }
         }
+
         return response;
     }
 
@@ -310,12 +327,34 @@ public class BookingService : IBookingService
     {
         ResultDTO<ICollection<BookingResponseDTO>> resultDto = null;
         ICollection<BookingResponseDTO> bookingResponseDtos = new List<BookingResponseDTO>();
+        ICollection<ServiceDTO> services = new List<ServiceDTO>();
         var bookings = await _bookingRepository.GetAllAsync();
         if (!bookings.IsNullOrEmpty())
         {
             foreach (var booking in bookings)
             {
-                var bookingResponse = _mapper.Map<BookingResponseDTO>(booking);
+                BookingResponseDTO bookingResponse = null;
+                var bookingDetailist =
+                    await _bookingDetailRepository.GetListByProperty(x => x.BookingId == booking.BookingId);
+                var room = await _roomRepository.GetByProperty(x => x.RoomId == bookingDetailist.ElementAt(0).RoomId);
+                var roomMapper = _mapper.Map<RoomDTO>(room);
+                foreach (var bookingDetail in bookingDetailist)
+                {
+                    var service = await _serviceRepository.GetByProperty(x => x.ServiceId == bookingDetail.ServiceId);
+                    var serviceMapper = _mapper.Map<ServiceDTO>(service);
+                    services.Add(serviceMapper);
+                    bookingResponse = new BookingResponseDTO()
+                    {
+                        BookingId = booking.BookingId,
+                        StartTime = bookingDetail.StartTime,
+                        EndTIme = bookingDetail.EndTIme,
+                        Room = roomMapper,
+                        BookingDate = booking.BookingDate,
+                        Services = services,
+                        Status = booking.Status
+                    };
+                }
+
                 bookingResponseDtos.Add(bookingResponse);
             }
 
@@ -368,7 +407,7 @@ public class BookingService : IBookingService
                 Message = "No booking Detail"
             };
         }
-        
+
         return result;
     }
 
@@ -386,7 +425,7 @@ public class BookingService : IBookingService
             ref objectMiss, ref objectMiss, ref objectMiss, ref objectMiss, ref objectMiss, ref objectMiss);
         ReplaceText("[Phone]", "123-456");
         doc.ExportAsFixedFormat(outputPathContract, Microsoft.Office.Interop.Word.WdExportFormat.wdExportFormatPDF);
-        
+
         doc.Close(WdSaveOptions.wdDoNotSaveChanges, WdOriginalFormat.wdOriginalDocumentFormat, false);
         app.Quit(WdSaveOptions.wdDoNotSaveChanges);
     }
@@ -396,162 +435,303 @@ public class BookingService : IBookingService
         this.app.Selection.Find.Execute(ref FindText, true, true, false, false
             , false, true, false, 1, ref ReplaceText, 2, false, false, false, false);
     }
-    
-    public async Task<bool> CancelByPH(int BookingId)
+
+    public async Task<ResultDTO<bool>> CancelByCustomer(int BookingId)
     {
-        
+
+        _ = await RefundWithOrderID(BookingId);
+
         var booking = await _bookingRepository.GetByIdAsync(BookingId);
         // var bookingDetails = await _bookingDetailRepository.GetListByProperty(x => x.BookingId == BookingId);
         // BookingDetail FirstBookingDetail = bookingDetails.ElementAt(0);
         // BookingDetailDTO bookingDetailDto = _mapper.Map<BookingDetailDTO>(FirstBookingDetail);
         // implement refund
-        var deposits = await _depositRepository.GetListByProperty(x => x.BookingId == BookingId);
-        if (deposits.Count() > 1)
-        {
-            // implement trả toàn phần in total price của booking
-            foreach (var deposit in deposits)
-            {
-                var transaction = await _transactionRepository.GetByProperty(x => x.DepositId == deposit.DepositId);
-                transaction.Status = TransactionStatus.CANCELED;
-                _ = await _transactionRepository.UpdateAsync(transaction);
-            }
-            booking.Status = BookingStatus.CANCELED;
-            _ = await _bookingRepository.UpdateAsync(booking);
-            
-            return true;
-        }
-        else if (deposits.Count() == 1)
-        {
-            var deposit = deposits.ElementAt(0);
+        var deposit = await _depositRepository.GetByProperty(x => x.BookingId == BookingId && x.Percentage == 50);
+        // if (deposits.Count() > 1)
+        // {
+        //     // implement trả toàn phần in total price của booking
+        //     foreach (var deposit in deposits)
+        //     {
+        //         var transaction = await _transactionRepository.GetByProperty(x => x.DepositId == deposit.DepositId);
+        //         transaction.Status = TransactionStatus.CANCELED;
+        //         _ = await _transactionRepository.UpdateAsync(transaction);
+        //     }
+        //
+        //     booking.Status = BookingStatus.CANCELED;
+        //     _ = await _bookingRepository.UpdateAsync(booking);
+        //
+        //     return true;
+        // }
+        // else if (deposits.Count() == 1)
+        // {
             // implement get amount của transaction
             var transaction = await _transactionRepository.GetByProperty(x => x.DepositId == deposit.DepositId);
             if (transaction != null)
             {
+                var BookingDate = booking.BookingDate;
+                var days = (DateTime.Now - BookingDate).Days;
+                if (days <= 10)
+                {
+                    _ = await RefundWithOrderID(BookingId);
+                    transaction.Status = TransactionStatus.CANCELED;
+                    booking.Status = BookingStatus.CANCELED;
+                    _ = await _transactionRepository.UpdateAsync(transaction);
+                    _ = await _bookingRepository.UpdateAsync(booking);
+                    return new ResultDTO<bool>()
+                    {
+                        Data = true,
+                        isSuccess = true,
+                        Message = "Cancel booking with refund"
+                    };
+                }
                 transaction.Status = TransactionStatus.CANCELED;
                 booking.Status = BookingStatus.CANCELED;
                 _ = await _transactionRepository.UpdateAsync(transaction);
                 _ = await _bookingRepository.UpdateAsync(booking);
+                return new ResultDTO<bool>()
+                {
+                    Data = true,
+                    isSuccess = true,
+                    Message = "Cancel booking with no refund"
+                };
             }
+        
+            return new ResultDTO<bool>()
+            {
+                Data = false,
+                isSuccess = false,
+                Message = "Internal Error"
+            };
+        // }
 
-            return true;
-        }
-
-        return false;
     }
 
     // private async Task<string> RefundWithOrderId(int bookingId)
     // {
     //     return null;
     // }
+
+    public async Task<string> QueryVNPAY(string vnp_txnRef, long transactionDate)
+    {
+        try
+        {
+            string vnp_RequestId = VnPayHelper.GetRandomNumber(8);
+            string vnp_Version = "2.1.0";
+            string vnp_Command = "querydr";
+            string vnp_TmnCode = _configuration["Vnpay:Tmncode"];
+            string vnp_TxnRef = vnp_txnRef;
+            string vnp_OrderInfo = $"TIm kiem Thanh Toan";
+            string vnp_TransDate = transactionDate.ToString();
+            DateTime now = DateTime.Now;
+            TimeZoneInfo localZone = TimeZoneInfo.FindSystemTimeZoneById("Etc/GMT+7");
+            DateTime localTime = TimeZoneInfo.ConvertTime(now, TimeZoneInfo.Local, localZone);
+            string vnp_CreateDate = localTime.ToString("yyyyMMddHHmmss");
+            string vnp_IpAddr = VnPayHelper.GenerateRandomIPAddress();
+
+            // var vnp_Params = new
+            // {
+            //     vnp_RequestId,
+            //     vnp_Version,
+            //     vnp_Command,
+            //     vnp_TmnCode,
+            //     vnp_TxnRef,
+            //     vnp_OrderInfo,
+            //     vnp_TransactionDate = vnp_TransDate,
+            //     vnp_CreateDate,
+            //     vnp_IpAddr
+            // };
+            
+            JObject vnp_Params = new JObject();
+            vnp_Params.Add("vnp_RequestId", vnp_RequestId);
+            vnp_Params.Add("vnp_Version", vnp_Version);
+            vnp_Params.Add("vnp_Command", vnp_Command);
+            vnp_Params.Add("vnp_TmnCode", vnp_TmnCode);
+            vnp_Params.Add("vnp_TxnRef", vnp_TxnRef);
+            vnp_Params.Add("vnp_OrderInfo", vnp_OrderInfo);
+            vnp_Params.Add("vnp_TransactionDate", vnp_TransDate);
+            vnp_Params.Add("vnp_CreateDate", vnp_CreateDate);
+            vnp_Params.Add("vnp_IpAddr", vnp_IpAddr);
+
+            string hash_Data =
+                $"{vnp_RequestId}|{vnp_Version}|{vnp_Command}|{vnp_TmnCode}|{vnp_TxnRef}|{vnp_TransDate}|{vnp_CreateDate}|{vnp_IpAddr}|{vnp_OrderInfo}";
+            string vnp_SecureHash = VnPayHelper.HmacSHA512(_configuration["Vnpay:HashSecret"], hash_Data);
+
+            // var vnpJson = JsonConvert.SerializeObject(new { vnp_Params, vnp_SecureHash });
+            vnp_Params.Add("vnp_SecureHash", vnp_SecureHash);
+            var url = new Uri(VnPayHelper.vnp_apiUrl);
+            var request = WebRequest.CreateHttp(url);
+            request.Method = "POST";
+            request.ContentType = "application/json";
+            
+            using (var streamWriter = new StreamWriter(request.GetRequestStream()))
+            {
+                streamWriter.Write(vnp_Params.ToString());
+                streamWriter.Flush();
+                streamWriter.Close();
+            }
+
+            var httpResponse = (HttpWebResponse)await request.GetResponseAsync();
+
+            var responseStream = httpResponse.GetResponseStream();
+            var streamReader = new StreamReader(responseStream ?? throw new InvalidOperationException(), Encoding.UTF8);
+            var responseString = streamReader.ReadToEnd();
+
+            return responseString;
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e.Message);
+            return "Error Server";
+        }
+    }
+
+    public async Task<string> QueryVNPayWithVnpTxtRef(string vnp_txnRef) 
+    {
+        try
+        {
+            // Fetch transaction details from the repository
+            var getTransaction = await _transactionRepository.GetByProperty(x => x.Txn_ref.ToString() == vnp_txnRef);
+            string getVnp_txnRef = getTransaction.Txn_ref.ToString();
+            string transactionDate = getTransaction.TransactionDate; // chu y cho nay
+            long transactionDateLong = long.Parse(transactionDate);
+            // Call VNPay service
+            string callingResult = await QueryVNPAY(getVnp_txnRef, transactionDateLong);
     
-    //  public async Task<HttpResponseMessage> QueryVNPAY(string vnp_txnRef, long transactionDate, HttpRequest req, HttpResponse resp)
-    // {
-    //     try
-    //     {
-    //         string vnp_RequestId = VnPayHelper.GetRandomNumber(8);
-    //         string vnp_Version = "2.1.0";
-    //         string vnp_Command = "pay";
-    //         string vnp_TmnCode = _configuration["Vnpay:Tmncode"];
-    //         string vnp_TxnRef = vnp_txnRef;
-    //         string vnp_OrderInfo = $"Thanh toán Booking Bitrhday Party";
-    //         string vnp_TransDate = transactionDate.ToString();
-    //         DateTime now = DateTime.Now;
-    //         TimeZoneInfo localZone = TimeZoneInfo.FindSystemTimeZoneById("Etc/GMT+7");
-    //         DateTime localTime = TimeZoneInfo.ConvertTime(now, TimeZoneInfo.Local, localZone);
-    //         string vnp_CreateDate = localTime.ToString("yyyyMMddHHmmss");
-    //         string vnp_IpAddr = VnPayHelper.GetIpAddress(req);
-    //
-    //         var vnp_Params = new
-    //         {
-    //             vnp_RequestId,
-    //             vnp_Version,
-    //             vnp_Command,
-    //             vnp_TmnCode,
-    //             vnp_TxnRef,
-    //             vnp_OrderInfo,
-    //             vnp_TransactionDate = vnp_TransDate,
-    //             vnp_CreateDate,
-    //             vnp_IpAddr
-    //         };
-    //
-    //         string hash_Data = $"{vnp_RequestId}|{vnp_Version}|{vnp_Command}|{vnp_TmnCode}|{vnp_TxnRef}|{vnp_TransDate}|{vnp_CreateDate}|{vnp_IpAddr}|{vnp_OrderInfo}";
-    //         string vnp_SecureHash = VnPayHelper.HmacSHA512(_configuration["Vnpay:HashSecret"], hash_Data);
-    //
-    //         var vnpJson = JsonConvert.SerializeObject(new { vnp_Params, vnp_SecureHash });
-    //
-    //         var url = new Uri(VnPayHelper.vnp_apiUrl);
-    //         var request = WebRequest.CreateHttp(url);
-    //         request.Method = "POST";
-    //         request.ContentType = "application/json";
-    //
-    //         using (var streamWriter = new StreamWriter(request.GetRequestStream()))
-    //         {
-    //             streamWriter.Write(vnpJson);
-    //             streamWriter.Flush();
-    //             streamWriter.Close();
-    //         }
-    //
-    //         var httpResponse = (HttpWebResponse)await request.GetResponseAsync();
-    //
-    //         var responseStream = httpResponse.GetResponseStream();
-    //         var streamReader = new StreamReader(responseStream ?? throw new InvalidOperationException(), Encoding.UTF8);
-    //         var responseString = streamReader.ReadToEnd();
-    //         
-    //         return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(responseString) };
-    //     }
-    //     catch (Exception e)
-    //     {
-    //         Console.WriteLine(e.Message);
-    //         return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable) { Content = new StringContent("ERROR SERVER") };
-    //     }
-    // }
-    //  
-    //  public async Task<string> QueryVNpayWithOrderID(string orderId)
-    //  {
-    //      try
-    //      {
-    //          if (!long.TryParse(orderId, out long parseOrderId))
-    //          {
-    //              return "Invalid order ID format";
-    //          }
-    //
-    //          var order = await _orderRepository.GetByIdAsync(parseOrderId);
-    //          if (order == null)
-    //          {
-    //              return "Order not found";
-    //          }
-    //
-    //          var transaction = await _transactionRepository.GetByIdAsync(order.TransactionId);
-    //          if (transaction == null)
-    //          {
-    //              return "Transaction not found";
-    //          }
-    //
-    //          var callingResult = await _vnPayService.QueryVNPAY(transaction.VnpTxnRef, transaction.VnpTransactionDate);
-    //          if (callingResult.IsSuccessStatusCode)
-    //          {
-    //              return await callingResult.Content.ReadAsStringAsync();
-    //          }
-    //          else
-    //          {
-    //              return "VNPAY SERVICE ERROR";
-    //          }
-    //      }
-    //      catch (FormatException e)
-    //      {
-    //          Console.WriteLine(e.Message);
-    //          return "ERROR PARSING ORDER ID";
-    //      }
-    //      catch (NullReferenceException e)
-    //      {
-    //          Console.WriteLine(e.Message);
-    //          return "ERROR NULL REFERENCE";
-    //      }
-    //      catch (Exception e)
-    //      {
-    //          Console.WriteLine(e.Message);
-    //          return "INTERNAL SERVER ERROR";
-    //      }
-    //  }
+            // Return the result
+            return callingResult;
+        }
+        catch (Exception e)
+        {
+            // Log the exception or handle it accordingly
+            Console.WriteLine(e.Message);
+            return "ERROR SERVER";
+        }
+    }
+    public async Task<string> RefundWithOrderID(int bookingId)
+    {
+        try
+        {
+            var getBooking = await _bookingRepository.GetByIdAsync(bookingId);
+            var user = await _userRepository.GetByProperty(x => x.UserId == getBooking.UserId);
+            var getTransaction = await _transactionRepository.GetByProperty(x => x.Txn_ref == getBooking.BookingId);
+            var vnp_txtRef = getTransaction.Txn_ref.ToString();
+            string transactionDate = getTransaction.TransactionDate;
+            int amount = (int)getTransaction.Amount;
+            
+            var responseQuery = await QueryVNPayWithVnpTxtRef(vnp_txtRef);
+                    
+            string getResponseCode = VnPayHelper.extractResponseCode(responseQuery);
+            
+                
+            // string getTransactionStatus = VnPayHelper.EX(getQuery);
+            
+            var callingResult = await 
+                RefundAsync(vnp_txtRef, transactionDate, amount, user.FullName);
+            // if (callingResult == "SUCCESS")
+            // {
+            //     Console.WriteLine("yes refund sent and success, wait for the bank to response");
+            //     orderService.SetOrderStatus(getOrder, OrderStatus.CANCEL);
+            //     SetTransactionStatus(getTransaction, TransactionStatus.REFUNDED);
+            //     vnPayService.DeleteOrderUrlMapItem(getOrder_Id);
+            //     return "refund Success";
+            // }
+            // else
+            // {
+            //     Console.WriteLine("fail to refund, try again");
+            //     return "FAIL TO REFUND, TRY AGAIN";
+            // }
+            return callingResult;
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e.Message);
+            return "ERROR SERVER";
+        }
+    }
     
+    public async Task<string> RefundAsync(string vnp_txnRef, string transactionDate, int getAmount, string UserName)
+{
+    try
+    {
+        string vnp_RequestId = VnPayHelper.GetRandomNumber(8);
+        string vnp_Version = "2.1.0";
+        string vnp_Command = "refund";
+        string vnp_TmnCode = _configuration["Vnpay:Tmncode"];
+        string vnp_TxnRef = vnp_txnRef;
+        string vnp_TransactionType = "02";
+        int amount = getAmount;
+        string vnp_Amount = amount.ToString();
+        string vnp_OrderInfo = $"Hoan tien GD";
+        string vnp_TransactionNo = "";
+        string vnp_TransactionDate = transactionDate;
+        string vnp_CreateBy = UserName; // implement ten user
+        DateTime now = DateTime.Now;
+        TimeZoneInfo localZone = TimeZoneInfo.FindSystemTimeZoneById("Etc/GMT+7");
+        DateTime localTime = TimeZoneInfo.ConvertTime(now, TimeZoneInfo.Local, localZone);
+        string vnp_CreateDate = localTime.ToString("yyyyMMddHHmmss");
+        string vnp_IpAddr = VnPayHelper.GenerateRandomIPAddress();
+        
+
+        //
+        // var vnp_Params = new
+        // {
+        //     vnp_RequestId,
+        //     vnp_Version,
+        //     vnp_Command,
+        //     vnp_TmnCode,
+        //     vnp_TransactionType,
+        //     vnp_TxnRef,
+        //     vnp_Amount,
+        //     vnp_OrderInfo,
+        //     vnp_TransactionDate,
+        //     vnp_CreateBy,
+        //     vnp_CreateDate,
+        //     vnp_IpAddr
+        // };
+        JObject vnp_Params = new JObject();
+
+        //63562614
+        //20230616094041
+
+        vnp_Params.Add("vnp_RequestId", vnp_RequestId);
+        vnp_Params.Add("vnp_Version", vnp_Version);
+        vnp_Params.Add("vnp_Command", vnp_Command);
+        vnp_Params.Add("vnp_TmnCode", vnp_TmnCode);
+        vnp_Params.Add("vnp_TransactionType", vnp_TransactionType);
+        vnp_Params.Add("vnp_TxnRef", vnp_TxnRef);
+        vnp_Params.Add("vnp_Amount", vnp_Amount);
+        vnp_Params.Add("vnp_OrderInfo", vnp_OrderInfo);
+
+        vnp_Params.Add("vnp_TransactionDate", vnp_TransactionDate);
+        vnp_Params.Add("vnp_CreateBy", vnp_CreateBy);
+        vnp_Params.Add("vnp_CreateDate", vnp_CreateDate);
+        vnp_Params.Add("vnp_IpAddr", vnp_IpAddr);
+
+        string hash_Data = $"{vnp_RequestId}|{vnp_Version}|{vnp_Command}|{vnp_TmnCode}|{vnp_TransactionType}|{vnp_TxnRef}|{vnp_Amount}|{vnp_TransactionNo}|{vnp_TransactionDate}|{vnp_CreateBy}|{vnp_CreateDate}|{vnp_IpAddr}|{vnp_OrderInfo}";
+        string vnp_SecureHash = VnPayHelper.HmacSHA512(_configuration["Vnpay:HashSecret"], hash_Data);
+        vnp_Params.Add("vnp_SecureHash", vnp_SecureHash);
+        // var vnpJson = JsonConvert.SerializeObject(new { vnp_Params, vnp_SecureHash });
+
+        using (var httpClient = new HttpClient())
+        {
+            var content = new StringContent(vnp_Params.ToString(), Encoding.UTF8, "application/json");
+            var httpResponse = await httpClient.PostAsync(VnPayHelper.vnp_apiUrl, content);
+
+            if (httpResponse.IsSuccessStatusCode)
+            {
+                return await httpResponse.Content.ReadAsStringAsync();
+            }
+            else
+            {
+                return "VNPAY SERVICE ERROR, TRY AGAIN LATER";
+            }
+        }
+    }
+    catch (Exception e)
+    {
+        Console.WriteLine(e.Message);
+        return "ERROR SERVER";
+    }
 }
+}
+

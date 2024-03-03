@@ -51,27 +51,53 @@ namespace BookingPartyproject.Controllers
 
         [HttpPost]
         [Authorize(Roles = "Party Host")]
-        public async Task<IActionResult> CreateService([FromBody] ServiceDTO ServiceDto)
+        public async Task<IActionResult> CreateService([FromForm] ServiceCreatedDTO ServiceDto)
         {
-            int checkCreate = await _service.CreateService(ServiceDto);
-            if (checkCreate > 0)
+            var checkCreate = await _service.CreateService(ServiceDto);
+            if (checkCreate.isSuccess == true)
             {
-                ResultDTO<ServiceDTO> resultDto = new ResultDTO<ServiceDTO>
-                {
-                    Data = ServiceDto,
-                    isSuccess = true,
-                    Message = "Created a new service successfully"
-                };
-                return Ok(resultDto);
+                return Ok(checkCreate);
             }
             else
             {
-                ResultDTO<ServiceDTO> resultDto = new ResultDTO<ServiceDTO>
+                return Ok(checkCreate);
+            }
+        }
+        // [HttpPut]
+        // [Authorize(Roles = "Admin")]
+        // public async Task<IActionResult> ApproveService([FromBody] int ServiceId)
+        // {
+        //     
+        // }
+
+        [HttpDelete]
+        public async Task<IActionResult> DisableService([FromBody] int ServiceId)
+        {
+            var result = await _service.DisableService(ServiceId);
+            return Ok(result);
+        }
+
+        [HttpPut]
+        public async Task<IActionResult> UpdateService([FromForm] ServiceUpdateDTO serviceCreatedDto)
+        {
+            var result = await _service.Update(serviceCreatedDto);
+            if (result)
+            {
+                return Ok(new ResultDTO<String>()
                 {
+                    Data = null,
+                    isSuccess = true,
+                    Message = "Update Successfully"
+                });
+            }
+            else
+            {
+                return Ok(new ResultDTO<String>()
+                {
+                    Data = null,
                     isSuccess = false,
-                    Message = "Can not created"
-                };
-                return Ok(resultDto);
+                    Message = "Update Not Successfully"
+                });
             }
         }
     }

@@ -13,6 +13,8 @@ namespace BusinessLogicLayer.Interfaces
         public Task<ICollection<ServiceResponseDTO>> GetAllServices();
         public Task<ICollection<ServiceResponseDTO>> GetAllServicesWithPaging(int page, int pageSize);
         public Service GetServicebyId(int Id);
-        public Task<int> CreateService (ServiceDTO service);
+        public Task<ResultDTO<ServiceDTO>> CreateService (ServiceCreatedDTO service);
+        public Task<ResultDTO<bool>> DisableService(int serviceId);
+        public Task<bool> Update(ServiceUpdateDTO serviceCreatedDto);
     }
 }

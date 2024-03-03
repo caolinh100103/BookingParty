@@ -1,9 +1,12 @@
+using System.Diagnostics.Contracts;
 using AutoMapper;
+using BusinessLogicLayer.Helper;
 using BusinessLogicLayer.Interfaces;
 using DataAccessLayer.Interface;
 using Microsoft.IdentityModel.Tokens;
 using Model.DTO;
 using Model.Entity;
+using String = System.String;
 
 namespace BusinessLogicLayer;
 
@@ -28,6 +31,7 @@ public class RoomService : IRoomService
     public async Task<ResultDTO<ICollection<RoomResponse>>> GetRooms()
     {
         ICollection<RoomResponse> roomResponses = new List<RoomResponse>(); 
+        ICollection<String> imageStr = new List<String>();
         ICollection<FeedbackReponseDTO> feedbackReponseDtos = new List<FeedbackReponseDTO>();
         var rooms = await _roomRepository.GetAllAsync();
         ICollection<FacilityRepsonseDTO> facilityRepsonseDtos = new List<FacilityRepsonseDTO>();
@@ -78,8 +82,10 @@ public class RoomService : IRoomService
             {
                 foreach (var image in images)
                 {
-                    roomResponse.ImagePaths.Add(image.ImagePath);
+                    imageStr.Add(image.ImageBase64);
                 }
+
+                roomResponse.Images = imageStr;
             }
             roomResponses.Add(roomResponse);
         }
@@ -96,6 +102,7 @@ public class RoomService : IRoomService
     public async Task<ResultDTO<ICollection<RoomResponse>>> GetRoomsWithPaging(int page, int pageSize)
     {
         ICollection<RoomResponse> roomResponses = new List<RoomResponse>(); 
+        ICollection<String> imageStr = new List<String>();
         ICollection<FeedbackReponseDTO> feedbackReponseDtos = new List<FeedbackReponseDTO>();
         var roomsPage = await _roomRepository.GetPaginatedListAsync(page, pageSize);
         ICollection<FacilityRepsonseDTO> facilityRepsonseDtos = new List<FacilityRepsonseDTO>();
@@ -146,8 +153,10 @@ public class RoomService : IRoomService
             {
                 foreach (var image in images)
                 {
-                    roomResponse.ImagePaths.Add(image.ImagePath);
+                    imageStr.Add(image.ImageBase64);
                 }
+
+                roomResponse.Images = imageStr;
             }
             roomResponses.Add(roomResponse);
         }
@@ -159,5 +168,90 @@ public class RoomService : IRoomService
             Message = "Return rooms successfully"
         };
         return result;
+    }
+
+    public async Task<ResultDTO<int>> CreateRoom(RoomCreatedDTO roomCreatedDto)
+    {
+        ResultDTO<int> result = null;
+        ICollection<string> imageBase64Str = new List<string>();
+        if (!roomCreatedDto.Images.IsNullOrEmpty())
+        {
+            foreach (var image in roomCreatedDto.Images)
+            {
+                var imageString = Base64Converter.ConvertToBase64(image);
+                imageBase64Str.Add(imageString);
+            }
+        }
+
+        var roomMapper = new Room()
+        {
+            Address = roomCreatedDto.Address,
+            Capacity = roomCreatedDto.Capacity,
+            Description = roomCreatedDto.Description,
+            RoomName = roomCreatedDto.RoomName,
+            UserId = roomCreatedDto.UserId,
+            Status = 0
+        };
+        var room = await _roomRepository.AddAsync(roomMapper);
+        if (room != null)
+        {
+            foreach (var str in imageBase64Str)
+            {
+                Image image = new Image()
+                {
+                    RoomId = room.RoomId,
+                    ImageBase64 = str,
+                    Status = 1,
+                };
+                _ = await _imageRepository.AddAsync(image);
+            }
+            return new ResultDTO<int>()
+                {
+                    Data = 1,
+                    isSuccess = true,
+                    Message = "Created room successfully"
+                };
+
+        }
+
+        return new ResultDTO<int>()
+        {
+            Data = 0,
+            isSuccess = false,
+            Message = "Can not created service successfully"
+        };
+    }
+
+    public async Task<ResultDTO<bool>> DisableRoom(int RoomId)
+    {
+        var room = await _roomRepository.GetByIdAsync(RoomId);
+        if (room != null && room.Status == 1)
+        {
+            room.Status = 0;
+            _ = await _roomRepository.UpdateAsync(room);
+            return new ResultDTO<bool>()
+            {
+                Data = true,
+                isSuccess = true,
+                Message = "Disable Successfully"
+            };
+        }
+
+        if (room.Status == 0)
+        {
+            return new ResultDTO<bool>()
+            {
+                Data = false,
+                isSuccess = false,
+                Message = "The Room has been disabled"
+            };
+        }
+
+        return new ResultDTO<bool>()
+        {
+            Data = false,
+            isSuccess = false,
+            Message = "Internal Server error"
+        };
     }
 }

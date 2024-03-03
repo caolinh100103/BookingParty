@@ -145,7 +145,7 @@ public class DepositService : IDepositService
 
     private async void updateStatusBooking(Booking booking)
     {
-        if (booking.Status == BookingStatus.PENDING)
+        if (booking.Status == BookingStatus.BOOKED)
         {
             booking.Status = BookingStatus.DEPOSITED;
             var updateBookingStatus = await _bookingRepository.UpdateAsync(booking);

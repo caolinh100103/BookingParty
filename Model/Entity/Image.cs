@@ -11,12 +11,13 @@ namespace Model.Entity
     {
         [Key]
         public int ImageId { get; set; }
-        public string ImagePath { get; set; }
+
+        public string ImageBase64 { get; set; }
         public int Status { get; set; }
 
-        public int ServiceId { get; set; }
+        public int? ServiceId { get; set; }
         public virtual Service Service { get; set; }
-        public int RoomId { get; set; }
+        public int? RoomId { get; set; }
         public virtual Room Room { get; set; }
     }
 }
