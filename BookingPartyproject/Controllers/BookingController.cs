@@ -55,5 +55,12 @@ public class BookingController : ControllerBase
         var result = await _bookingService.CancelByCustomer(BookingId);
         return Ok(result);
     }
-    
+
+    [HttpPut("finishBooking")]
+    [Authorize("Party Host")]
+    public async Task<IActionResult> FinishBooking([FromBody] int bookingId)
+    {
+        var result = await _bookingService.FinishBooking(bookingId);
+        return Ok(result);
+    }
 }

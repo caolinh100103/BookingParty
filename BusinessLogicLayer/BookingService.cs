@@ -327,12 +327,13 @@ public class BookingService : IBookingService
     {
         ResultDTO<ICollection<BookingResponseDTO>> resultDto = null;
         ICollection<BookingResponseDTO> bookingResponseDtos = new List<BookingResponseDTO>();
-        ICollection<ServiceDTO> services = new List<ServiceDTO>();
+        ICollection<ServiceDTO> services = null;
         var bookings = await _bookingRepository.GetAllAsync();
         if (!bookings.IsNullOrEmpty())
         {
             foreach (var booking in bookings)
             {
+                services = new List<ServiceDTO>();
                 BookingResponseDTO bookingResponse = null;
                 var bookingDetailist =
                     await _bookingDetailRepository.GetListByProperty(x => x.BookingId == booking.BookingId);
@@ -409,6 +410,84 @@ public class BookingService : IBookingService
         }
 
         return result;
+    }
+
+    public async Task<ResultDTO<int>> FinishBooking(int bookingId)
+    {
+        var booking = await _bookingRepository.GetByIdAsync(bookingId);
+        if (booking != null)
+        {
+            var anyBookingDetail = await _bookingDetailRepository.GetByProperty(x => x.BookingId == bookingId);
+            if (anyBookingDetail.EndTIme < DateTime.Now)
+            {
+                return new ResultDTO<int>()
+                {
+                    Data = 0,
+                    isSuccess = false,
+                    Message = "The party has not been ended yet"
+                };
+            }
+            else
+            {
+                var deposits = await _depositRepository.GetListByProperty(x => x.BookingId == bookingId);
+                if (deposits.Count > 1)
+                {
+                    return new ResultDTO<int>()
+                    {
+                        Data = 0,
+                        isSuccess = false,
+                        Message = "The booking has been finished so can not finish more"
+                    };
+                }
+                else
+                {
+                    var deposit = deposits.ElementAt(0);
+                    if (deposit.Percentage == 50)
+                    {
+                        booking.Status = BookingStatus.FINISHED;
+                        _ = await _bookingRepository.UpdateAsync(booking);
+                        Deposit dep = new Deposit()
+                        {
+                            Title = "FINISH BOOKING",
+                            Content = $"Finish booking No.{bookingId}",
+                            Percentage = 100,
+                            BookingId = bookingId
+                        };
+                        var depositCreated = await _depositRepository.AddAsync(dep);
+                        if (depositCreated != null)
+                        {
+                            TransactionHistory transactionHistory = new TransactionHistory()
+                            {
+                                DepositId = depositCreated.DepositId,
+                                Amount = booking.TotalPrice,
+                                Txn_ref = null,
+                                Status = TransactionStatus.FINISHED,
+                                BankCode = null,
+                                PaymentMethod = "COD",
+                                TransactionDate = DateTime.Now.ToString("yyyyMMdd")
+                            };
+                            var transaction = await _transactionRepository.AddAsync(transactionHistory);
+                            if (transaction != null)
+                            {
+                                return new ResultDTO<int>()
+                                {
+                                    Data = 1,
+                                    isSuccess = true,
+                                    Message = "Finish payment the rest for party party"
+                                };
+                            } 
+                        }
+                    }
+                }
+            }
+        }
+
+        return new ResultDTO<int>()
+        {
+            Data = 0,
+            isSuccess = false,
+            Message = "Internal Server"
+        };
     }
 
     private Microsoft.Office.Interop.Word.Application app;

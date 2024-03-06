@@ -13,10 +13,13 @@ namespace BusinessLogicLayer;
 public class UserService : IUserService
 {
     private readonly IGenericRepository<User> _userRepository;
+    private readonly IGenericRepository<Role> _roleRepository;
     private readonly IMapper _mapper;
-    public UserService(IGenericRepository<User> userRepository, IMapper mapper)
+    public UserService(IGenericRepository<User> userRepository, IMapper mapper,
+        IGenericRepository<Role> roleRepository)
     {
         _userRepository = userRepository;
+        _roleRepository = roleRepository;
         _mapper = mapper;
     }
     public async Task<ResultDTO<UserReponseDTO>> GetUserById(string token)
@@ -31,11 +34,14 @@ public class UserService : IUserService
             // Access the user's email claim
             emailClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
         }
-        var user = await _userRepository.GetByProperty(x => x.Email.Equals(emailClaim));
+        var userToken = await _userRepository.GetByProperty(x => x.Email.Equals(emailClaim));
         UserReponseDTO userMapper = null;
-        if (user != null)
+        if (userToken != null)
         {
-            userMapper = _mapper.Map<UserReponseDTO>(user);
+            userMapper = _mapper.Map<UserReponseDTO>(userToken);
+            var role = await _roleRepository.GetByProperty(x => x.RoleId == userToken.RoleId);
+            var roleMapper = _mapper.Map<RoleResponseDTO>(role);
+            userMapper.Role = roleMapper;
         }
 
         ResultDTO<UserReponseDTO> response = new ResultDTO<UserReponseDTO>
@@ -54,7 +60,11 @@ public class UserService : IUserService
         var users = await _userRepository.GetAllAsync();
         foreach (var user in users)
         {
-            userReponseDtos.Add(_mapper.Map<UserReponseDTO>(user));
+            var userMapper = _mapper.Map<UserReponseDTO>(user);
+            var role = await _roleRepository.GetByProperty(x => x.RoleId == user.RoleId);
+            var roleMapper = _mapper.Map<RoleResponseDTO>(role);
+            userMapper.Role = roleMapper;
+            userReponseDtos.Add(userMapper);
         }
         result = new ResultDTO<ICollection<UserReponseDTO>>()
         {
@@ -63,5 +73,30 @@ public class UserService : IUserService
             Message = "Return list of User"
         };
         return result;
+    }
+
+    public async Task<ResultDTO<UserReponseDTO>> getUserByUserId(int userId)
+    {
+        var user = await _userRepository.GetByProperty(x => x.UserId == userId);
+        if (user != null)
+        {
+            var userResponse = _mapper.Map<UserReponseDTO>(user);
+            var role = await _roleRepository.GetByProperty(x => x.RoleId == user.RoleId);
+            var roleMapper = _mapper.Map<RoleResponseDTO>(role);
+            userResponse.Role = roleMapper;
+            return new ResultDTO<UserReponseDTO>()
+            {
+                Data = userResponse,
+                isSuccess = true,
+                Message = "Return user by userID"
+            };
+        }
+
+        return new ResultDTO<UserReponseDTO>()
+        {
+            Data = null,
+            isSuccess = false,
+            Message = "Can not return user by wrong Id"
+        };
     }
 }

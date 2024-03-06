@@ -60,6 +60,10 @@ public class VnPayService : IVnPayService
     {
         var bookingId = int.Parse(vnPayResponseDto.BookingId);
         var booking = await _bookRepository.GetByIdAsync(bookingId);
+        if (booking.Status == BookingStatus.CANCELED)
+        {
+            return;
+        }
         var Deposit = await _depositRepository.GetByProperty(x => x.BookingId == bookingId);
         var amount = decimal.Parse(vnPayResponseDto.Amount);
         if (Deposit == null)
@@ -90,37 +94,9 @@ public class VnPayService : IVnPayService
                 };
                 var transactionHistory = _mapper.Map<TransactionHistory>(transactionCreatedDto);
                 var transactionHistoryCreated = await _transactionHistory.AddAsync(transactionHistory);
-            } 
-        }
-        else
-        {
-            booking.Status = BookingStatus.FINISHED;
-            _ = await _bookRepository.UpdateAsync(booking);
-            
-            DepositDTO depositDto = new DepositDTO()
-            {
-                Content = $"Making a deposit for the rest of Booking No.{bookingId}",
-                Percentage = 100,
-                Title = "Finisghpayment for a booking",
-                BookingId = bookingId
-            };
-            var deposit = _mapper.Map<Deposit>(depositDto);
-            var depositCreated = await _depositRepository.AddAsync(deposit);
-            if (depositCreated != null)
-            {
-                TransactionCreatedDTO transactionCreatedDto = new TransactionCreatedDTO()
-                {
-                    Txn_ref = bookingId,
-                    BankCode = vnPayResponseDto.PaymentMethod,
-                    Status = TransactionStatus.SUCCESS,
-                    Amount = amount,
-                    PaymentMethod = "VNPAY",
-                    TransactionDate = vnPayResponseDto.PayDate,
-                    DepositId = depositCreated.DepositId
-                };
-                var transactionHistory = _mapper.Map<TransactionHistory>(transactionCreatedDto);
-                var transactionHistoryCreated  = await _transactionHistory.AddAsync(transactionHistory);
-            } 
+            }
+
+            return;
         }
     }
 

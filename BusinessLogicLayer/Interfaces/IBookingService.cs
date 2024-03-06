@@ -9,4 +9,5 @@ public interface IBookingService
     Task<ResultDTO<bool>> CancelByCustomer(int BookingId);
     Task<ResultDTO<ICollection<BookingResponseDTO>>> GetAllBooking();
     Task<ResultDTO<ICollection<BookingDetailDTO>>> GetAllBookingDetailByBookingId(int bookingId);
+    Task<ResultDTO<int>> FinishBooking(int bookingId);
 }

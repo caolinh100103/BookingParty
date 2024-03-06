@@ -50,8 +50,8 @@ public class RoomController : ControllerBase
         return Ok(checkRoom);
     }
 
-    [HttpDelete]
-    public async Task<IActionResult> DisableRoom([FromBody] int roomId)
+    [HttpPut("disabelroom/{roomId}")]
+    public async Task<IActionResult> DisableRoom(int roomId)
     {
         var result = await _roomService.DisableRoom(roomId);
         if (result.Data)
@@ -60,5 +60,19 @@ public class RoomController : ControllerBase
         }
 
         return BadRequest();
+    }
+
+    [HttpPost("searchAvailableRoom")]
+    public async Task<IActionResult> SearchAvailableRoom([FromBody] SearchAvalableRoomDTO searchAvalableRoomDto)
+    {
+        var result = await _roomService.FindAvailableRoomInDateTime(searchAvalableRoomDto);
+        return Ok(result);
+    }
+
+    [HttpGet("party_host/rooms/{partyHostId}")]
+    public async Task<IActionResult> GetRoomsByPartyHostId(int partyHostId)
+    {
+        var result = await _roomService.GetAllRoomsByPartyHostId(partyHostId);
+        return Ok(result);
     }
 }

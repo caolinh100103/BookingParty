@@ -70,8 +70,8 @@ namespace BookingPartyproject.Controllers
         //     
         // }
 
-        [HttpDelete]
-        public async Task<IActionResult> DisableService([FromBody] int ServiceId)
+        [HttpPut("disabelservice/{ServiceId}")]
+        public async Task<IActionResult> DisableService(int ServiceId)
         {
             var result = await _service.DisableService(ServiceId);
             return Ok(result);
@@ -99,6 +99,13 @@ namespace BookingPartyproject.Controllers
                     Message = "Update Not Successfully"
                 });
             }
+        }
+
+        [HttpGet("party_host/service/{partyhostId}")]
+        public async Task<IActionResult> GetServiceByPartyHost(int partyhostId)
+        {
+            var result = await _service.GetAllServiceBypartyHost(partyhostId);
+            return Ok(result);
         }
     }
 }

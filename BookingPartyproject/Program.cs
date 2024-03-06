@@ -91,6 +91,7 @@ builder.Services.AddScoped<IGenericRepository<Promotion>, GenericRepository<Prom
 builder.Services.AddScoped<IGenericRepository<Facility>, GenericRepository<Facility>>();
 builder.Services.AddScoped<IGenericRepository<Feedback>, GenericRepository<Feedback>>();
 builder.Services.AddScoped<IGenericRepository<ServiceAvailableInDay>, GenericRepository<ServiceAvailableInDay>>();
+builder.Services.AddScoped<IGenericRepository<Role>, GenericRepository<Role>>();
 
 builder.Services.AddCors(options =>
 {

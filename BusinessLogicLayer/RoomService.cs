@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Diagnostics.Contracts;
 using AutoMapper;
 using BusinessLogicLayer.Helper;
@@ -17,9 +18,11 @@ public class RoomService : IRoomService
     private readonly IGenericRepository<Image> _imageRepository;
     private readonly IGenericRepository<Facility> _facilityRepository;
     private readonly IGenericRepository<Feedback> _feedbackRepository;
+    private IGenericRepository<BookingDetail> _bookingDetailrepository;
     private readonly IMapper _mapper;
     public RoomService(IGenericRepository<Room> roomRepository, IGenericRepository<Promotion> promotionRepository, IGenericRepository<Image> imageRepository,
-        IGenericRepository<Facility> facilityRepository, IMapper mapper, IGenericRepository<Feedback> feedbackRepository)
+        IGenericRepository<Facility> facilityRepository, IMapper mapper, IGenericRepository<Feedback> feedbackRepository,
+        IGenericRepository<BookingDetail> bookingDetailrepository)
     {
         _roomRepository = roomRepository;
         _promotionRepository = promotionRepository;
@@ -27,6 +30,7 @@ public class RoomService : IRoomService
         _facilityRepository = facilityRepository;
         _mapper = mapper;
         _feedbackRepository = feedbackRepository;
+        _bookingDetailrepository = bookingDetailrepository;
     }
     public async Task<ResultDTO<ICollection<RoomResponse>>> GetRooms()
     {
@@ -252,6 +256,98 @@ public class RoomService : IRoomService
             Data = false,
             isSuccess = false,
             Message = "Internal Server error"
+        };
+    }
+
+    public async Task<ResultDTO<ICollection<RoomResponse>>> FindAvailableRoomInDateTime(SearchAvalableRoomDTO searchAvalableRoomDto)
+    {
+        if (searchAvalableRoomDto.EndTime < searchAvalableRoomDto.StartTime)
+        {
+            return new ResultDTO<ICollection<RoomResponse>>()
+            {
+                Data = null,
+                isSuccess = false,
+                Message = "can not search rooms with start time > end time"
+            };
+        }
+        var hours = (searchAvalableRoomDto.EndTime - searchAvalableRoomDto.StartTime).TotalHours;
+        if (hours > 4)
+        {
+            return new ResultDTO<ICollection<RoomResponse>>()
+            {
+                Data = null,
+                isSuccess = false,
+                Message = "Please choose the difference between startTime and Endtime is 4 hours"
+            };
+        }
+        ICollection<RoomResponse> roomResponses = null;
+        var rooms = await _roomRepository.GetAllAsync();
+        var bookingDetailList = await _bookingDetailrepository.GetListByProperty(x =>
+            (x.StartTime <= searchAvalableRoomDto.EndTime &&
+              x.EndTIme >= searchAvalableRoomDto.StartTime));
+        if (bookingDetailList.IsNullOrEmpty())
+        {
+            roomResponses = new List<RoomResponse>();
+            foreach (var room in rooms)
+            {
+                var roomMapper = _mapper.Map<RoomResponse>(room);
+                roomResponses.Add(roomMapper);
+            }
+
+            return new ResultDTO<ICollection<RoomResponse>>
+            {
+                Data = roomResponses,
+                isSuccess = true,
+                Message = "Return all rooms"
+            };
+        }
+        else
+        {
+            foreach (var bookingDetail in bookingDetailList)
+            {
+                var roomGet = await _roomRepository.GetByProperty(x => x.RoomId == bookingDetail.RoomId);
+                rooms.Remove(roomGet);
+            }
+            roomResponses = new List<RoomResponse>();
+            foreach (var room in rooms)
+            {
+                var roomMapper = _mapper.Map<RoomResponse>(room);
+                roomResponses.Add(roomMapper);
+            }
+            return new ResultDTO<ICollection<RoomResponse>>()
+            {
+                Data = roomResponses,
+                isSuccess = true,
+                Message = "Return List of room after filter"
+            };
+        }
+    }
+
+    public async Task<ResultDTO<ICollection<RoomResponse>>> GetAllRoomsByPartyHostId(int partyHostId)
+    {
+        ICollection<RoomResponse> response = new List<RoomResponse>();
+        var rooms = await _roomRepository.GetListByProperty(x => x.UserId == partyHostId);
+        if (!rooms.IsNullOrEmpty())
+        {
+            foreach (var room in rooms)
+            {
+                var roomMapper = _mapper.Map<RoomResponse>(room);
+                response.Add(roomMapper);
+            }
+
+            return new ResultDTO<ICollection<RoomResponse>>()
+            {
+                Data = response,
+                isSuccess = true,
+                Message = "return list of rooms"
+            };
+        }
+
+        return new ResultDTO<ICollection<RoomResponse>>()
+        {
+            Data = null,
+            isSuccess = true,
+            Message = "The party host does not have any room"
         };
     }
 }

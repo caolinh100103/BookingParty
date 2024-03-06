@@ -149,6 +149,24 @@ namespace BusinessLogicLayer
             return true;
         }
 
+        public async Task<ResultDTO<ICollection<ServiceResponseDTO>>> GetAllServiceBypartyHost(int partyHostId)
+        {
+            ICollection<ServiceResponseDTO> response = new List<ServiceResponseDTO>();
+            var services = await _serviceRepository.GetListByProperty(x => x.UserId == partyHostId);
+            foreach (var service in services)
+            {
+                var serviceMapper = _mapper.Map<ServiceResponseDTO>(service);
+                response.Add(serviceMapper);
+            }
+
+            return new ResultDTO<ICollection<ServiceResponseDTO>>()
+            {
+                Data = response,
+                isSuccess = true,
+                Message = "Return list of services Bu party host"
+            };
+        }
+
         public async Task<ICollection<ServiceResponseDTO>> GetAllServices()
         {
             var services = await _serviceRepository.GetAllAsync();

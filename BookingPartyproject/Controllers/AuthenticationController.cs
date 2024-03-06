@@ -26,24 +26,16 @@ namespace BookingPartyproject.Controllers
         }
 
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] UserDTO userDTO) 
+        public async Task<IActionResult> Register([FromBody] RegisterDTO registerDto) 
         {
-            if (userDTO == null || userDTO.FullName == null || userDTO.Password == null || userDTO.Email == null)
+            if (registerDto == null || registerDto.FullName == null || registerDto.Password == null || registerDto.Email == null)
             {
                 return BadRequest("Null User");
             }
             else
             {
-                var user = _mapper.Map<User>(userDTO);
-                int checkRegister = await _service.Register(user);
-                if (checkRegister > 0)
-                {
-                    return Ok("Register Successfully;");
-                }
-                else
-                {
-                    return BadRequest("Can not register");
-                }
+                var result = await _service.Register(registerDto);
+                return Ok(result);
             }
         }
         
@@ -74,7 +66,17 @@ namespace BookingPartyproject.Controllers
                 }
             }
         }
-        
+
+        // [HttpPut]
+        // public async Task<IActionResult> VerifyAccount()
+        // {
+        //     
+        // }
+        // [HttpGet("logout")]
+        // public Task<IActionResult> Logout()
+        // {
+        //     
+        // }
         private string GenerateToken(TokenDTO userToken)
         {
             List<Claim> claims = new List<Claim>
@@ -104,6 +106,13 @@ namespace BookingPartyproject.Controllers
                     SameSite = SameSiteMode.None
                 });
             return jwtToken;
+        }
+
+        [HttpPut("disableUser")]
+        public async Task<IActionResult> BanUser([FromBody] int UserId)
+        {
+            var result = await _service.BanUser(UserId);
+            return Ok(result);
         }
     }
 }

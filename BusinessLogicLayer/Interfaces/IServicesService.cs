@@ -16,5 +16,6 @@ namespace BusinessLogicLayer.Interfaces
         public Task<ResultDTO<ServiceDTO>> CreateService (ServiceCreatedDTO service);
         public Task<ResultDTO<bool>> DisableService(int serviceId);
         public Task<bool> Update(ServiceUpdateDTO serviceCreatedDto);
+        public Task<ResultDTO<ICollection<ServiceResponseDTO>>> GetAllServiceBypartyHost(int partyHostId);
     }
 }

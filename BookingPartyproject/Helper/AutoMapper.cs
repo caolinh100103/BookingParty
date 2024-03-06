@@ -33,6 +33,10 @@ namespace BookingPartyproject.Helper
             CreateMap<ServiceCreatedDTO, Service>();
             CreateMap<Room, RoomCreatedDTO>();
             CreateMap<RoomCreatedDTO, Room>();
+            CreateMap<RoleResponseDTO, Role>();
+            CreateMap<Role, RoleResponseDTO>();
+            CreateMap<Room, RoomResponse>();
+            CreateMap<RoomResponse, Room>();
         }
     }
 }
