@@ -65,6 +65,7 @@ builder.Services.AddDbContext<BookingPartyDataContext>(options =>
 });
 
 builder.Services.AddAutoMapper(typeof(Program).Assembly);
+builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddScoped<IServicesService, ServicesService>();
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
@@ -75,6 +76,7 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IRoomService, RoomService>();
 builder.Services.AddScoped<IFileService, FileService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 
 builder.Services.AddScoped<IGenericRepository<Service>, GenericRepository<Service>>();
 builder.Services.AddScoped<IGenericRepository<User>, GenericRepository<User>>();

@@ -87,6 +87,16 @@ public class BookingService : IBookingService
         }
 
         var days = (bookingDto.StartTime - DateTime.Now).Days;
+        if (days > 270)
+        {
+            ResultDTO<BookingResponseDTO> bookingResponse = new ResultDTO<BookingResponseDTO>
+            {
+                Message = "You can not book a party over 9 months from now",
+                isSuccess = false,
+                Data = null
+            };
+            return bookingResponse;
+        }
         if (days < 30)
         {
             ResultDTO<BookingResponseDTO> bookingResponse = new ResultDTO<BookingResponseDTO>

@@ -3,7 +3,6 @@ using System.Security.Claims;
 using AutoMapper;
 using BusinessLogicLayer.Interfaces;
 using Model.DTO;
-using Model.Entity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 
@@ -16,8 +15,8 @@ namespace BookingPartyproject.Controllers
     {
         private readonly IMapper _mapper;
         private readonly IAuthenticationService _service;
-
         private readonly IConfiguration _configuration;
+
         public AuthenticationController(IMapper mapper, IAuthenticationService service, IConfiguration configuration) 
         {
              _mapper = mapper;
@@ -113,6 +112,18 @@ namespace BookingPartyproject.Controllers
         {
             var result = await _service.BanUser(UserId);
             return Ok(result);
+        }
+
+        [HttpPost("verify")]
+        public async Task<IActionResult> verifyByEmail([FromBody] VerifyAccountDTO verifyAccountDto)
+        {
+            var result = await _service.VerifyAccount(verifyAccountDto);
+            if (result.isSuccess)
+            {
+                return Ok(result);
+            }
+
+            return BadRequest();
         }
     }
 }
