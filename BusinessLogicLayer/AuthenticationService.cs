@@ -44,8 +44,13 @@ public class AuthenticationService : IAuthenticationService
             var role = await _roleRepository.GetByIdAsync(user.RoleId);
             if (SHA256Helper.verifyPassword(password, user.Password))
             {
-                user.Role = role;
-                return user;
+                if (user.Status == UserStatus.ACTIVE)
+                {
+                    user.Role = role;
+                    return user;   
+                }
+
+                return null;
             }
             else
             {
@@ -69,7 +74,7 @@ public class AuthenticationService : IAuthenticationService
         else
         {
             var userMapper = _mapper.Map<User>(registerDto);
-            userMapper.Status = UserStatus.NON_ACTIVE;
+            userMapper.Status = UserStatus.INACTIVE;
             userMapper.EmailConfirmationToken = GeneratorDigits.GenerateSixDigitCode();
             userMapper.Password = SHA256Helper.Hash(userMapper.Password); 
             var user = await _userRepository.AddAsync(userMapper);
@@ -81,9 +86,9 @@ public class AuthenticationService : IAuthenticationService
                 var actionContext = new ActionContext(request.HttpContext, new RouteData(), new ActionDescriptor());
                 var urlHelper = _urlHelperFactory.GetUrlHelper(actionContext);
                 var userResponse = _mapper.Map<UserReponseDTO>(user);
-                string frontendUrl = $"https://yourfrontendpage.com/verify?userEmail={user.Email}"; // Update with your frontend URL, The email I pass in parameter
+                string frontendUrl = $"http://localhost:3000/otp?userEmail={user.Email}"; // Update with your frontend URL, The email I pass in parameter
                 string emailBody = $"Please use the following verification code to verify your email: {user.EmailConfirmationToken}. " +
-                                   $"Alternatively, you can click <a href=\"{frontendUrl}\">here</a> to return to the frontend page.";
+                                   $"Alternatively, you can click <a href=\"{frontendUrl}\">here</a> to return to the verify page.";
                 await _emailService.SendEmailAsync(user.Email, "Email Verification", emailBody);
                 return new ResultDTO<UserReponseDTO>()
                 {
@@ -107,7 +112,7 @@ public class AuthenticationService : IAuthenticationService
         var user = await _userRepository.GetByIdAsync(UserId);
         if (user != null)
         {
-            if (user.Status == UserStatus.NON_ACTIVE)
+            if (user.Status == UserStatus.INACTIVE)
             {
                 return new ResultDTO<UserReponseDTO>()
                 {
@@ -118,7 +123,7 @@ public class AuthenticationService : IAuthenticationService
             }
             else
             {
-                user.Status = UserStatus.NON_ACTIVE;
+                user.Status = UserStatus.INACTIVE;
                 var userUpdated = await _userRepository.UpdateAsync(user);
                 var userReponse = _mapper.Map<UserReponseDTO>(user);
                 return new ResultDTO<UserReponseDTO>()

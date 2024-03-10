@@ -48,4 +48,14 @@ public class UserController : ControllerBase
         var result = await _userService.getUserByUserId(userId);
         return Ok(result);
     }
+
+    [HttpPut("updateAddress/{userId}")]
+    public async Task<IActionResult> UpdateUserAdress(int userid, AdressUpdatedDTO adressUpdatedDto)
+    {
+        var result = await _userService.UpdateAddressOfUser(adressUpdatedDto);
+        return Ok(result);
+    }
+    
+    // [HttpPut("user/{userId}")]
+    // public async Task<IActionResult> UpdateUserInformation(int userId, UserDTO)
 }

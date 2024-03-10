@@ -10,4 +10,5 @@ public interface IRoomService
     Task<ResultDTO<bool>> DisableRoom(int RoomId);
     Task<ResultDTO<ICollection<RoomResponse>>> FindAvailableRoomInDateTime(SearchAvalableRoomDTO searchAvalableRoomDto);
     Task<ResultDTO<ICollection<RoomResponse>>> GetAllRoomsByPartyHostId(int partyHostId);
+    Task<ResultDTO<bool>> UpdateRoom(int roomId, RoomUpdatedDTO roomCreatedDto);
 }

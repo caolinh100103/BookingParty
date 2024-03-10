@@ -350,4 +350,43 @@ public class RoomService : IRoomService
             Message = "The party host does not have any room"
         };
     }
+
+    public async Task<ResultDTO<bool>> UpdateRoom(int roomId, RoomUpdatedDTO roomCreatedDto)
+    {
+        ICollection<String> imageBase64Str = new List<String>();
+        var room = await _roomRepository.GetByProperty(x => x.RoomId == roomId);
+        if (room == null)
+        {
+            return new ResultDTO<bool>()
+            {
+                Data = false,
+                isSuccess = false,
+                Message = "Can not find the room"
+            };
+        }
+        if (room != null)
+        {
+            room.Address = roomCreatedDto.Address;
+            room.RoomName = roomCreatedDto.RoomName;
+            room.Description = roomCreatedDto.Description;
+            room.Capacity = roomCreatedDto.Capacity;
+            room.Area = roomCreatedDto.Area;
+        }
+        else if (!room.Images.IsNullOrEmpty() && room != null)
+        {
+            foreach (var image in roomCreatedDto.Images)
+            {
+                var imageString = Base64Converter.ConvertToBase64(image.Image);
+                var imageGet = await _imageRepository.GetByIdAsync(image.ImageId);
+                imageGet.ImageBase64 = imageString;
+                _ = _imageRepository.UpdateAsync(imageGet);
+            }
+        }
+        return new ResultDTO<bool>()
+        {
+            Data = true,
+            isSuccess = true,
+            Message = "Update Successfully"
+        };
+    }
 }

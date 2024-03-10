@@ -116,10 +116,10 @@ namespace BusinessLogicLayer
             };
         }
         
-        public async Task<bool> Update(ServiceUpdateDTO serviceUpdateDto)
+        public async Task<bool> Update(int serviceId, ServiceUpdateDTO serviceUpdateDto)
         {
             ICollection<String> imageBase64Str = new List<String>();
-            var service = await _serviceRepository.GetByIdAsync(serviceUpdateDto.ServiceId);
+            var service = await _serviceRepository.GetByIdAsync(serviceId);
             if (service == null)
             {
                 return false;
@@ -165,6 +165,38 @@ namespace BusinessLogicLayer
                 isSuccess = true,
                 Message = "Return list of services Bu party host"
             };
+        }
+
+        public async Task<ResultDTO<ICollection<ServiceResponseDTO>>> SearchService(string searchItem)
+        {
+            var servicesResponse = await GetAllServices();
+            if (searchItem.IsNullOrEmpty())
+            {
+                return new ResultDTO<ICollection<ServiceResponseDTO>>()
+                {
+                    Data = servicesResponse,
+                    isSuccess = true,
+                    Message = "return all service"
+                };
+            }
+            else
+            {
+                var services = await _serviceRepository.GetListByProperty(x =>
+                    !(x.ServiceName.Contains(searchItem) || x.ServiceTitle.Contains(searchItem) ||
+                      x.Description.Contains(searchItem) || x.Price.ToString().Contains(searchItem)));
+                foreach (var service in services)
+                {
+                    var serviceMapper = _mapper.Map<ServiceResponseDTO>(service);
+                    servicesResponse.Remove(serviceMapper);
+                }
+
+                return new ResultDTO<ICollection<ServiceResponseDTO>>()
+                {
+                    Data = servicesResponse,
+                    isSuccess = true,
+                    Message = "Return list of service with search item"
+                };
+            }
         }
 
         public async Task<ICollection<ServiceResponseDTO>> GetAllServices()

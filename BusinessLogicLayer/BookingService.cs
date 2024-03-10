@@ -385,7 +385,6 @@ public class BookingService : IBookingService
                 Message = "We do not have any booking yet"
             };
         }
-
         return resultDto;
     }
 
@@ -498,6 +497,60 @@ public class BookingService : IBookingService
             isSuccess = false,
             Message = "Internal Server"
         };
+    }
+
+    public async Task<ResultDTO<ICollection<BookingResponseDTO>>> GetAllBookingByUserId(int userId)
+    {
+        ResultDTO<ICollection<BookingResponseDTO>> resultDto = null;
+        ICollection<BookingResponseDTO> bookingResponseDtos = new List<BookingResponseDTO>();
+        ICollection<ServiceDTO> services = null;
+        var bookings = await _bookingRepository.GetListByProperty(x => x.UserId == userId);
+        if (!bookings.IsNullOrEmpty())
+        {
+            foreach (var booking in bookings)
+            {
+                services = new List<ServiceDTO>();
+                BookingResponseDTO bookingResponse = null;
+                var bookingDetailist =
+                    await _bookingDetailRepository.GetListByProperty(x => x.BookingId == booking.BookingId);
+                var room = await _roomRepository.GetByProperty(x => x.RoomId == bookingDetailist.ElementAt(0).RoomId);
+                var roomMapper = _mapper.Map<RoomDTO>(room);
+                foreach (var bookingDetail in bookingDetailist)
+                {
+                    var service = await _serviceRepository.GetByProperty(x => x.ServiceId == bookingDetail.ServiceId);
+                    var serviceMapper = _mapper.Map<ServiceDTO>(service);
+                    services.Add(serviceMapper);
+                    bookingResponse = new BookingResponseDTO()
+                    {
+                        BookingId = booking.BookingId,
+                        StartTime = bookingDetail.StartTime,
+                        EndTIme = bookingDetail.EndTIme,
+                        Room = roomMapper,
+                        BookingDate = booking.BookingDate,
+                        Services = services,
+                        Status = booking.Status
+                    };
+                }
+
+                bookingResponseDtos.Add(bookingResponse);
+            }
+            resultDto = new ResultDTO<ICollection<BookingResponseDTO>>()
+            {
+                Data = bookingResponseDtos,
+                isSuccess = true,
+                Message = "Return list of booking"
+            };
+        }
+        else
+        {
+            resultDto = new ResultDTO<ICollection<BookingResponseDTO>>()
+            {
+                Data = bookingResponseDtos,
+                isSuccess = true,
+                Message = "We do not have any booking yet"
+            };
+        }
+        return resultDto;
     }
 
     private Microsoft.Office.Interop.Word.Application app;

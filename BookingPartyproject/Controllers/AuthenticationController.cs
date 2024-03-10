@@ -65,12 +65,6 @@ namespace BookingPartyproject.Controllers
                 }
             }
         }
-
-        // [HttpPut]
-        // public async Task<IActionResult> VerifyAccount()
-        // {
-        //     
-        // }
         // [HttpGet("logout")]
         // public Task<IActionResult> Logout()
         // {

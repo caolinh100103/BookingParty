@@ -75,4 +75,11 @@ public class RoomController : ControllerBase
         var result = await _roomService.GetAllRoomsByPartyHostId(partyHostId);
         return Ok(result);
     }
+
+    [HttpPut("room/{roomId}")]
+    public async Task<IActionResult> RoomUpdate(int roomId, [FromForm] RoomUpdatedDTO roomUpdated)
+    {
+        var result = await _roomService.UpdateRoom(roomId, roomUpdated);
+        return Ok(result);
+    }
 }

@@ -99,4 +99,36 @@ public class UserService : IUserService
             Message = "Can not return user by wrong Id"
         };
     }
+
+    public async Task<ResultDTO<UserReponseDTO>> UpdateAddressOfUser(AdressUpdatedDTO adressUpdatedDto)
+    {
+        User userUpdated = null;
+        var user = await _userRepository.GetByProperty(x => x.UserId == adressUpdatedDto.UserId);
+        if (user != null)
+        {
+            user.Address = adressUpdatedDto.Address;
+            userUpdated = await _userRepository.UpdateAsync(user);
+        }
+
+        if (userUpdated != null)
+        {
+            var userReponse = _mapper.Map<UserReponseDTO>(userUpdated);
+            var role = await _roleRepository.GetByProperty(x => x.RoleId == userUpdated.RoleId);
+            var roleReponse = _mapper.Map<RoleResponseDTO>(role);
+            userReponse.Role = roleReponse;
+            return new ResultDTO<UserReponseDTO>()
+            {
+                Data = userReponse,
+                isSuccess = true,
+                Message = "Return user updated"
+            };
+        }
+
+        return new ResultDTO<UserReponseDTO>()
+        {
+            Data = null,
+            isSuccess = false,
+            Message = "The Id is not exist"
+        };
+    }
 }

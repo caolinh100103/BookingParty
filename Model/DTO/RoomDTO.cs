@@ -7,5 +7,6 @@ public class RoomDTO
     public string Description { get; set; }
     public int Capacity { get; set; }
     public string Address { get; set; }
+    public float Area { get; set; }
     public decimal Price { get; set; }
 }

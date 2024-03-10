@@ -57,10 +57,17 @@ public class BookingController : ControllerBase
     }
 
     [HttpPut("finishBooking")]
-    [Authorize("Party Host")]
+    [Authorize("Customer")]
     public async Task<IActionResult> FinishBooking([FromBody] int bookingId)
     {
         var result = await _bookingService.FinishBooking(bookingId);
+        return Ok(result);
+    }
+
+    [HttpGet("booking/{userId}")]
+    public async Task<IActionResult> GetAllBookingByUserId(int userId)
+    {
+        var result = await _bookingService.GetAllBookingByUserId(userId);
         return Ok(result);
     }
 }

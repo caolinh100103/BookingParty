@@ -77,10 +77,10 @@ namespace BookingPartyproject.Controllers
             return Ok(result);
         }
 
-        [HttpPut]
-        public async Task<IActionResult> UpdateService([FromForm] ServiceUpdateDTO serviceCreatedDto)
+        [HttpPut("service/{serviceId}")]
+        public async Task<IActionResult> UpdateService(int serviceId, [FromForm] ServiceUpdateDTO serviceCreatedDto)
         {
-            var result = await _service.Update(serviceCreatedDto);
+            var result = await _service.Update(serviceId, serviceCreatedDto);
             if (result)
             {
                 return Ok(new ResultDTO<String>()
@@ -105,6 +105,13 @@ namespace BookingPartyproject.Controllers
         public async Task<IActionResult> GetServiceByPartyHost(int partyhostId)
         {
             var result = await _service.GetAllServiceBypartyHost(partyhostId);
+            return Ok(result);
+        }
+
+        [HttpPost("search_service")]
+        public async Task<IActionResult> SearchAllService([FromBody] string searchItem)
+        {
+            var result = _service.SearchService(searchItem);
             return Ok(result);
         }
     }
