@@ -19,10 +19,11 @@ public class RoomService : IRoomService
     private readonly IGenericRepository<Facility> _facilityRepository;
     private readonly IGenericRepository<Feedback> _feedbackRepository;
     private IGenericRepository<BookingDetail> _bookingDetailrepository;
+    private IGenericRepository<User> _userRepository;
     private readonly IMapper _mapper;
     public RoomService(IGenericRepository<Room> roomRepository, IGenericRepository<Promotion> promotionRepository, IGenericRepository<Image> imageRepository,
         IGenericRepository<Facility> facilityRepository, IMapper mapper, IGenericRepository<Feedback> feedbackRepository,
-        IGenericRepository<BookingDetail> bookingDetailrepository)
+        IGenericRepository<BookingDetail> bookingDetailrepository, IGenericRepository<User> userRepository)
     {
         _roomRepository = roomRepository;
         _promotionRepository = promotionRepository;
@@ -31,6 +32,7 @@ public class RoomService : IRoomService
         _mapper = mapper;
         _feedbackRepository = feedbackRepository;
         _bookingDetailrepository = bookingDetailrepository;
+        _userRepository = userRepository;
     }
     public async Task<ResultDTO<ICollection<RoomResponse>>> GetRooms()
     {
@@ -58,6 +60,9 @@ public class RoomService : IRoomService
                 foreach (var feedback in feedbacks)
                 {
                     var feedbackMapper = _mapper.Map<FeedbackReponseDTO>(feedback);
+                    var userFeedback = await _userRepository.GetByProperty(x => x.UserId == feedback.UserId);
+                    var userFeedBackMapper = _mapper.Map<UserDTO>(userFeedback);
+                    feedbackMapper.User = userFeedBackMapper;
                     feedbackReponseDtos.Add(feedbackMapper);
                 }
                 roomResponse.Feedbacks = feedbackReponseDtos;
@@ -194,7 +199,7 @@ public class RoomService : IRoomService
             Description = roomCreatedDto.Description,
             RoomName = roomCreatedDto.RoomName,
             UserId = roomCreatedDto.UserId,
-            Status = 0
+            Status = 1
         };
         var room = await _roomRepository.AddAsync(roomMapper);
         if (room != null)
@@ -388,5 +393,38 @@ public class RoomService : IRoomService
             isSuccess = true,
             Message = "Update Successfully"
         };
+    }
+
+    public async Task<ResultDTO<ICollection<RoomResponse>>> SearchRoom(string searchItem)
+    {
+        var roomResponse = await GetRooms();
+        if (searchItem.IsNullOrEmpty())
+        {
+            return new ResultDTO<ICollection<RoomResponse>>()
+            {
+                Data = roomResponse.Data,
+                isSuccess = true,
+                Message = "return all rooms"
+            };
+        }
+        else
+        {
+            var rooms = await _roomRepository.GetListByProperty(x =>
+                !(x.RoomName.Contains(searchItem) || x.Address.Contains(searchItem) ||
+                  x.Capacity.ToString().Contains(searchItem) || x.Price.ToString().Contains(searchItem)
+                  || x.Area.ToString().Contains(searchItem)));
+            foreach (var room in rooms)
+            {
+                var serviceMapper = _mapper.Map<RoomResponse>(room);
+                roomResponse.Data.Remove(serviceMapper);
+            }
+
+            return new ResultDTO<ICollection<RoomResponse>>()
+            {
+                Data = roomResponse.Data,
+                isSuccess = true,
+                Message = "Return list of service with search item"
+            };
+        }
     }
 }

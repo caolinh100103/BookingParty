@@ -39,6 +39,8 @@ namespace BookingPartyproject.Helper
             CreateMap<RoomResponse, Room>();
             CreateMap<RegisterDTO , User>();
             CreateMap<User , RegisterDTO>();
+            CreateMap<Feedback , FeedbackReponseDTO>();
+            CreateMap<FeedbackReponseDTO , Feedback>();
         }
     }
 }

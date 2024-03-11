@@ -65,11 +65,11 @@ namespace BookingPartyproject.Controllers
                 }
             }
         }
-        // [HttpGet("logout")]
-        // public Task<IActionResult> Logout()
-        // {
-        //     
-        // }
+/*        [HttpGet("logout")]
+        public Task<IActionResult> Logout()
+        {
+            Response.Cookies.Delete("token");
+        }*/
         private string GenerateToken(TokenDTO userToken)
         {
             List<Claim> claims = new List<Claim>
@@ -119,5 +119,8 @@ namespace BookingPartyproject.Controllers
 
             return BadRequest();
         }
+        
+        // [HttpPut("change_password")]
+        // public async Task<IActionResult> 
     }
 }

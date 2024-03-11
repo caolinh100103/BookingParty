@@ -10,5 +10,5 @@ public class FeedbackReponseDTO
 
     public int? RoomId { get; set; }
     public int? ServiceId { get; set; }
-    public int UserId { get; set; }
+    public UserDTO User { get; set; }
 }

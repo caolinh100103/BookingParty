@@ -167,6 +167,12 @@ namespace DataAccessLayer
            modelBuilder.Entity<Image>()
                .Property(x => x.RoomId)
                .IsRequired(false);
+           modelBuilder.Entity<Feedback>()
+               .Property(x => x.RoomId)
+               .IsRequired(false);
+           modelBuilder.Entity<Feedback>()
+               .Property(x => x.ServiceId)
+               .IsRequired(false);
         }
     }
 }

@@ -49,7 +49,7 @@ namespace BusinessLogicLayer
                 Price = serviceCreatedDto.Price,
                 Description = serviceCreatedDto.Description,
                 ServiceName = serviceCreatedDto.ServiceName,
-                Status = 0,
+                Status = 1,
                 CategoryId = serviceCreatedDto.CategoryId,
                 ServiceTitle = serviceCreatedDto.ServiceTitle
             };
@@ -227,6 +227,9 @@ namespace BusinessLogicLayer
                     foreach (var feedback in feedbacks)
                     {
                         var feedbackMapper = _mapper.Map<FeedbackReponseDTO>(feedback);
+                        var userFeedback = await _userRepository.GetByProperty(x => x.UserId == feedback.UserId);
+                        var userFeedBackMapper = _mapper.Map<UserDTO>(userFeedback);
+                        feedbackMapper.User = userFeedBackMapper;
                         feedbackReponseDtos.Add(feedbackMapper);
                     }
                     serviceResponse.Feedbacks = feedbackReponseDtos;

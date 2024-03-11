@@ -553,6 +553,36 @@ public class BookingService : IBookingService
         return resultDto;
     }
 
+    public async Task<ResultDTO<bool>> CancelByPartyHost(int BookingId)
+    {
+        var booking = await _bookingRepository.GetByIdAsync(BookingId);
+        var deposit = await _depositRepository.GetByProperty(x => x.BookingId == BookingId && x.Percentage == 50);
+        // implement get amount của transaction
+            var transaction = await _transactionRepository.GetByProperty(x => x.DepositId == deposit.DepositId);
+            if (transaction != null)
+            {
+                _ = await RefundWithOrderID(BookingId);
+                var BookingDate = booking.BookingDate;
+                transaction.Status = TransactionStatus.CANCELED;
+                    booking.Status = BookingStatus.CANCELED;
+                    _ = await _transactionRepository.UpdateAsync(transaction);
+                    _ = await _bookingRepository.UpdateAsync(booking);
+                    return new ResultDTO<bool>()
+                    {
+                        Data = true,
+                        isSuccess = true,
+                        Message = "Cancel booking with refund"
+                    };
+            }
+        
+            return new ResultDTO<bool>()
+            {
+                Data = false,
+                isSuccess = false,
+                Message = "Internal Error"
+            };
+    }
+
     private Microsoft.Office.Interop.Word.Application app;
     private Microsoft.Office.Interop.Word.Document doc;
     private object objectMiss = Missing.Value;
@@ -580,9 +610,6 @@ public class BookingService : IBookingService
 
     public async Task<ResultDTO<bool>> CancelByCustomer(int BookingId)
     {
-
-        _ = await RefundWithOrderID(BookingId);
-
         var booking = await _bookingRepository.GetByIdAsync(BookingId);
         // var bookingDetails = await _bookingDetailRepository.GetListByProperty(x => x.BookingId == BookingId);
         // BookingDetail FirstBookingDetail = bookingDetails.ElementAt(0);

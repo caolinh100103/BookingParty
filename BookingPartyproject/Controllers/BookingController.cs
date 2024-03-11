@@ -65,9 +65,18 @@ public class BookingController : ControllerBase
     }
 
     [HttpGet("booking/{userId}")]
+    [Authorize(Roles = "Customer,Party Host")]
     public async Task<IActionResult> GetAllBookingByUserId(int userId)
     {
         var result = await _bookingService.GetAllBookingByUserId(userId);
+        return Ok(result);
+    }
+
+    [HttpPost("CancelByPartyHost/")]
+    [Authorize(Roles = "Party Host")]
+    public async Task<IActionResult> CancelByPartyHost([FromBody]int bookingId)
+    {
+        var result = await _bookingService.CancelByPartyHost(bookingId);
         return Ok(result);
     }
 }

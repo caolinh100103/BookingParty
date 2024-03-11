@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Mvc;
 using Model.DTO;
 
 namespace BusinessLogicLayer.Interfaces;
@@ -11,4 +12,5 @@ public interface IRoomService
     Task<ResultDTO<ICollection<RoomResponse>>> FindAvailableRoomInDateTime(SearchAvalableRoomDTO searchAvalableRoomDto);
     Task<ResultDTO<ICollection<RoomResponse>>> GetAllRoomsByPartyHostId(int partyHostId);
     Task<ResultDTO<bool>> UpdateRoom(int roomId, RoomUpdatedDTO roomCreatedDto);
+    Task<ResultDTO<ICollection<RoomResponse>>> SearchRoom(string searchItem);
 }

@@ -82,4 +82,10 @@ public class RoomController : ControllerBase
         var result = await _roomService.UpdateRoom(roomId, roomUpdated);
         return Ok(result);
     }
+    [HttpPost("search_room")]
+    public async Task<IActionResult> SearchAllService([FromBody] string searchItem)
+    {
+        var result = await _roomService.SearchRoom(searchItem);
+        return Ok(result);
+    }
 }
