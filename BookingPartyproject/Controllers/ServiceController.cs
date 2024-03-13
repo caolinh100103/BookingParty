@@ -111,7 +111,7 @@ namespace BookingPartyproject.Controllers
         [HttpPost("search_service")]
         public async Task<IActionResult> SearchAllService([FromBody] string searchItem)
         {
-            var result = _service.SearchService(searchItem);
+            var result = await _service.SearchService(searchItem);
             return Ok(result);
         }
     }

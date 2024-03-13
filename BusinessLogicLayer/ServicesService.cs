@@ -64,7 +64,7 @@ namespace BusinessLogicLayer
                         ImageBase64 = str,
                         Status = 1,
                     };
-                    _ = _imageRepository.AddAsync(image);
+                    _ = await _imageRepository.AddAsync(image);
                 }
 
                 return new ResultDTO<ServiceDTO>()
@@ -152,10 +152,20 @@ namespace BusinessLogicLayer
         public async Task<ResultDTO<ICollection<ServiceResponseDTO>>> GetAllServiceBypartyHost(int partyHostId)
         {
             ICollection<ServiceResponseDTO> response = new List<ServiceResponseDTO>();
+            ICollection<ImageDTO> imageResponse = null;
             var services = await _serviceRepository.GetListByProperty(x => x.UserId == partyHostId);
             foreach (var service in services)
             {
+                imageResponse = new List<ImageDTO>();
                 var serviceMapper = _mapper.Map<ServiceResponseDTO>(service);
+                var imageList = await _imageRepository.GetListByProperty(x => x.ServiceId == serviceMapper.ServiceId);
+                foreach (var image in imageList)
+                {
+                    var imageMapper = _mapper.Map<ImageDTO>(image);
+                    imageResponse.Add(imageMapper);
+                }
+
+                serviceMapper.Images = imageResponse;
                 response.Add(serviceMapper);
             }
 
@@ -187,7 +197,7 @@ namespace BusinessLogicLayer
                 foreach (var service in services)
                 {
                     var serviceMapper = _mapper.Map<ServiceResponseDTO>(service);
-                    servicesResponse.Remove(serviceMapper);
+                    servicesResponse.RemoveWhere(x => x.ServiceId == serviceMapper.ServiceId);
                 }
 
                 return new ResultDTO<ICollection<ServiceResponseDTO>>()
@@ -204,9 +214,10 @@ namespace BusinessLogicLayer
             var services = await _serviceRepository.GetAllAsync();
             ICollection<ServiceResponseDTO> response = new List<ServiceResponseDTO>();
             ICollection<ImageDTO> imageDtos = new List<ImageDTO>();
-            ICollection<FeedbackReponseDTO> feedbackReponseDtos = new List<FeedbackReponseDTO>();
+            ICollection<FeedbackReponseDTO> feedbackReponseDtos = null;
             foreach (var service in services)
             {
+                feedbackReponseDtos = new List<FeedbackReponseDTO>();
                 ServiceResponseDTO serviceResponse = new ServiceResponseDTO();
                 var serviceMapper = _mapper.Map<ServiceDTO>(service);
                 serviceResponse.ServiceId = serviceMapper.ServiceId;

@@ -161,6 +161,49 @@ public class FileService : IFileService
             Status = $"File: {blobFileName} has been successfully deleted"
         };
     }
+    // public async Task<string> Index(IFormFile file)
+    // {
+    //     FileStream fs;
+    //     FileStream ms;  
+    //     if (file.Length > 0)
+    //     {
+    //         string folderName = "room";
+    //         string path = Path.Combine(_env.WebRootPath, $"images/{folderName}");
+    //         ms = new FileStream(Path.Combine(path, file.FileName), FileMode.Open);
+    //         var auth = new FirebaseAuthProvider(new FirebaseConfig(ApiKey));
+    //         var a = await auth.SignInWithEmailAndPasswordAsync(AuthEmail, AuthPassword);
+    //
+    //         // you can use CancellationTokenSource to cancel the upload midway
+    //         var cancellation = new CancellationTokenSource();
+    //
+    //         var task = new FirebaseStorage(
+    //                 Bucket,
+    //                 new FirebaseStorageOptions
+    //                 {
+    //                     AuthTokenAsyncFactory = () => Task.FromResult(a.FirebaseToken),
+    //                     ThrowOnCancel = true // when you cancel the upload, exception is thrown. By default no exception is thrown
+    //                 })
+    //             .Child("receipts")
+    //             .Child("test")
+    //             .Child($"aspcore.png")
+    //             .PutAsync(ms, cancellation.Token);
+    //
+    //         task.Progress.ProgressChanged += (s, e) => Console.WriteLine($"Progress: {e.Percentage} %");
+    //
+    //
+    //         try
+    //         {
+    //             ViewBag.link = await task;
+    //             return Ok();
+    //         }
+    //         catch (Exception ex)
+    //         {
+    //             ViewBag.error = $"Exception was thrown: {ex}";
+    //         }
+    //
+    //     }
+    //     return BadRequest();
+    // }
 }
 
     

@@ -72,7 +72,7 @@ public class BookingController : ControllerBase
         return Ok(result);
     }
 
-    [HttpPost("CancelByPartyHost/")]
+    [HttpPost("CancelByPartyHost")]
     [Authorize(Roles = "Party Host")]
     public async Task<IActionResult> CancelByPartyHost([FromBody]int bookingId)
     {

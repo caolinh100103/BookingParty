@@ -44,6 +44,7 @@ public class RoomService : IRoomService
         RoomResponse roomResponse = null;
         foreach (var room in rooms)
         {
+            roomResponse = new RoomResponse();
             var facilities = await _facilityRepository.GetListByProperty(x => x.RoomId == room.RoomId);
             if (!facilities.IsNullOrEmpty())
             {
@@ -199,6 +200,7 @@ public class RoomService : IRoomService
             Description = roomCreatedDto.Description,
             RoomName = roomCreatedDto.RoomName,
             UserId = roomCreatedDto.UserId,
+            Price = roomCreatedDto.Price,
             Status = 1
         };
         var room = await _roomRepository.AddAsync(roomMapper);
@@ -212,7 +214,7 @@ public class RoomService : IRoomService
                     ImageBase64 = str,
                     Status = 1,
                 };
-                _ = await _imageRepository.AddAsync(image);
+                var imageCreated = await _imageRepository.AddAsync(image);
             }
             return new ResultDTO<int>()
                 {
@@ -356,7 +358,7 @@ public class RoomService : IRoomService
         };
     }
 
-    public async Task<ResultDTO<bool>> UpdateRoom(int roomId, RoomUpdatedDTO roomCreatedDto)
+    public async Task<ResultDTO<bool>> UpdateRoom(int roomId, RoomUpdatedDTO roomUpdatedDto)
     {
         ICollection<String> imageBase64Str = new List<String>();
         var room = await _roomRepository.GetByProperty(x => x.RoomId == roomId);
@@ -371,15 +373,16 @@ public class RoomService : IRoomService
         }
         if (room != null)
         {
-            room.Address = roomCreatedDto.Address;
-            room.RoomName = roomCreatedDto.RoomName;
-            room.Description = roomCreatedDto.Description;
-            room.Capacity = roomCreatedDto.Capacity;
-            room.Area = roomCreatedDto.Area;
+            room.Address = roomUpdatedDto.Address;
+            room.RoomName = roomUpdatedDto.RoomName;
+            room.Description = roomUpdatedDto.Description;
+            room.Capacity = roomUpdatedDto.Capacity;
+            room.Area = roomUpdatedDto.Area;
+            room.Price = roomUpdatedDto.Price;
         }
         else if (!room.Images.IsNullOrEmpty() && room != null)
         {
-            foreach (var image in roomCreatedDto.Images)
+            foreach (var image in roomUpdatedDto.Images)
             {
                 var imageString = Base64Converter.ConvertToBase64(image.Image);
                 var imageGet = await _imageRepository.GetByIdAsync(image.ImageId);
@@ -387,6 +390,8 @@ public class RoomService : IRoomService
                 _ = _imageRepository.UpdateAsync(imageGet);
             }
         }
+
+        _ = await _roomRepository.UpdateAsync(room);
         return new ResultDTO<bool>()
         {
             Data = true,
@@ -415,8 +420,8 @@ public class RoomService : IRoomService
                   || x.Area.ToString().Contains(searchItem)));
             foreach (var room in rooms)
             {
-                var serviceMapper = _mapper.Map<RoomResponse>(room);
-                roomResponse.Data.Remove(serviceMapper);
+                var roomMapper = _mapper.Map<RoomResponse>(room);
+                roomResponse.Data.RemoveWhere(x => x.RoomId == roomMapper.RoomId);
             }
 
             return new ResultDTO<ICollection<RoomResponse>>()

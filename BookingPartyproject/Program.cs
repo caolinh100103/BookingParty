@@ -118,7 +118,6 @@ app.UseSwaggerUI(options =>
     options.SwaggerEndpoint("/swagger/v1/swagger.json", "Production v1");
     options.RoutePrefix = String.Empty;
 });
-
 app.UseCors(x => x
     .AllowAnyMethod()
     .AllowAnyHeader()
