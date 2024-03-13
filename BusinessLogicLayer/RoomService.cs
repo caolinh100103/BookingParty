@@ -44,7 +44,6 @@ public class RoomService : IRoomService
         RoomResponse roomResponse = null;
         foreach (var room in rooms)
         {
-            roomResponse = new RoomResponse();
             feedbackReponseDtos = new List<FeedbackReponseDTO>();
             facilityRepsonseDtos = new List<FacilityRepsonseDTO>();
             var facilities = await _facilityRepository.GetListByProperty(x => x.RoomId == room.RoomId);
@@ -68,7 +67,6 @@ public class RoomService : IRoomService
                     feedbackMapper.User = userFeedBackMapper;
                     feedbackReponseDtos.Add(feedbackMapper);
                 }
-                roomResponse.Feedbacks = feedbackReponseDtos;
             }
             roomResponse = new RoomResponse()
             {
@@ -79,7 +77,8 @@ public class RoomService : IRoomService
                 Status = room.Status,
                 RoomName = room.RoomName,
                 Price = room.Price,
-                Facilities = facilityRepsonseDtos
+                Facilities = facilityRepsonseDtos,
+                Feedbacks = feedbackReponseDtos
             };
             var promotion = await _promotionRepository.GetByProperty(x => x.RoomId == room.RoomId);
             if (promotion != null)
