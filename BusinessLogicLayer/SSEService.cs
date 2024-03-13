@@ -24,8 +24,8 @@ public class SSEService : ISSEService
             }
         }
     }
-    private static readonly Dictionary<string, StreamWriter> ClientConnections = new Dictionary<string, StreamWriter>();
-    public static async Task SendNotification(string userId, object data)
+    private readonly Dictionary<string, StreamWriter> ClientConnections = new Dictionary<string, StreamWriter>();
+    public async Task SendNotification(string userId, object data)
     {
         StreamWriter writer;
         lock (ClientConnections)
@@ -40,8 +40,6 @@ public class SSEService : ISSEService
                 }
                 catch (Exception ex)
                 {
-                    // Handle exception or client disconnect
-                    // For simplicity, you can remove the client from the dictionary
                     ClientConnections.Remove(userId);
                 }
             }

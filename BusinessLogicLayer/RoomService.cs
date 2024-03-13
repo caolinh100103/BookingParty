@@ -54,14 +54,30 @@ public class RoomService : IRoomService
                     var facilityMapper = _mapper.Map<FacilityRepsonseDTO>(facility);
                     facilityRepsonseDtos.Add(facilityMapper);
                 }
-                roomResponse.Facilities = facilityRepsonseDtos;
             }
             var feedbacks = await _feedbackRepository.GetListByProperty(x => x.RoomId == room.RoomId);
+            var bookingDetails = await _bookingDetailrepository.GetListByProperty(x => x.RoomId == room.RoomId);
+            var numOfBooking = bookingDetails.Count();
             if (!feedbacks.IsNullOrEmpty())
             {
+                float avarageRating = 0f;
+                int numFeedBacks = feedbacks.Count();
+                if (numFeedBacks >= 1)
+                {
+                    float sumFeedback = 0f;
+                    foreach (var feedback in feedbacks)
+                    {
+                        sumFeedback += feedback.Rate;
+                    }
+
+                    avarageRating = sumFeedback / numFeedBacks;
+                }
+                
                 foreach (var feedback in feedbacks)
                 {
                     var feedbackMapper = _mapper.Map<FeedbackReponseDTO>(feedback);
+                    feedbackMapper.AverageRating = avarageRating;
+                    feedbackMapper.NumOfBookings = numOfBooking;
                     var userFeedback = await _userRepository.GetByProperty(x => x.UserId == feedback.UserId);
                     var userFeedBackMapper = _mapper.Map<UserDTO>(userFeedback);
                     feedbackMapper.User = userFeedBackMapper;
