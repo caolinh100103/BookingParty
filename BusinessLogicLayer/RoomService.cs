@@ -38,13 +38,15 @@ public class RoomService : IRoomService
     {
         ICollection<RoomResponse> roomResponses = new List<RoomResponse>(); 
         ICollection<String> imageStr = new List<String>();
-        ICollection<FeedbackReponseDTO> feedbackReponseDtos = new List<FeedbackReponseDTO>();
+        ICollection<FeedbackReponseDTO> feedbackReponseDtos = null;
         var rooms = await _roomRepository.GetAllAsync();
-        ICollection<FacilityRepsonseDTO> facilityRepsonseDtos = new List<FacilityRepsonseDTO>();
+        ICollection<FacilityRepsonseDTO> facilityRepsonseDtos = null;
         RoomResponse roomResponse = null;
         foreach (var room in rooms)
         {
             roomResponse = new RoomResponse();
+            feedbackReponseDtos = new List<FeedbackReponseDTO>();
+            facilityRepsonseDtos = new List<FacilityRepsonseDTO>();
             var facilities = await _facilityRepository.GetListByProperty(x => x.RoomId == room.RoomId);
             if (!facilities.IsNullOrEmpty())
             {
