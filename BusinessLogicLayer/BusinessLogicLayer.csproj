@@ -36,4 +36,8 @@
     <ProjectReference Include="..\Model\Model.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="SSEServicec.cs" />
+  </ItemGroup>
+
 </Project>

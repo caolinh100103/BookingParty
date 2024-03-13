@@ -213,11 +213,12 @@ namespace BusinessLogicLayer
         {
             var services = await _serviceRepository.GetAllAsync();
             ICollection<ServiceResponseDTO> response = new List<ServiceResponseDTO>();
-            ICollection<ImageDTO> imageDtos = new List<ImageDTO>();
+            ICollection<ImageDTO> imageDtos = null;
             ICollection<FeedbackReponseDTO> feedbackReponseDtos = null;
             foreach (var service in services)
             {
                 feedbackReponseDtos = new List<FeedbackReponseDTO>();
+                imageDtos = new List<ImageDTO>();
                 ServiceResponseDTO serviceResponse = new ServiceResponseDTO();
                 var serviceMapper = _mapper.Map<ServiceDTO>(service);
                 serviceResponse.ServiceId = serviceMapper.ServiceId;

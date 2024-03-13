@@ -35,9 +35,7 @@ public class BookingService : IBookingService
     private readonly IGenericRepository<TransactionHistory> _transactionRepository;
     private readonly IConfiguration _configuration;
     private readonly IMapper _mapper;
-
-    private string samplePathContract = "D:/FPT/CN7/SWD392/testPdf/sample.pdf";
-    private string outputPathContract = "D:/FPT/CN7/SWD392/testPdf/output/Output.pdf";
+    private readonly ISSEService _sseService;
 
     public BookingService(IGenericRepository<Booking> bookingRepository,
         IGenericRepository<BookingDetail> bookingDetailRepository, IGenericRepository<Service> serviceRepository
@@ -47,7 +45,8 @@ public class BookingService : IBookingService
         IGenericRepository<ServiceAvailableInDay> serviceAvailableRepository,
         IGenericRepository<Deposit> depositRepository,
         IGenericRepository<TransactionHistory> transactionRepository,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        ISSEService sseService)
     {
         _bookingRepository = bookingRepository;
         _bookingDetailRepository = bookingDetailRepository;
@@ -60,6 +59,7 @@ public class BookingService : IBookingService
         _transactionRepository = transactionRepository;
         _mapper = mapper;
         _configuration = configuration;
+        _sseService = sseService;
     }
 
     public async Task<ResultDTO<BookingResponseDTO>> CreateBooking(BookingCreateDTO bookingDto, string token)
@@ -307,6 +307,7 @@ public class BookingService : IBookingService
             SentTime = DateTime.Now
         };
         var notification = await _notificationRepository.AddAsync(noti);
+        // _sseService.SendNotification(notification.Content);
         if (services != null)
         {
             foreach (var service in services)
@@ -582,32 +583,6 @@ public class BookingService : IBookingService
                 Message = "Internal Error"
             };
     }
-
-    private Microsoft.Office.Interop.Word.Application app;
-    private Microsoft.Office.Interop.Word.Document doc;
-    private object objectMiss = Missing.Value;
-    private object TmpFile = System.IO.Path.GetTempPath() + "sample.pdf";
-    private object FileLoaction = @"D:\FPT\CN7\SWD392\testPdf\sample2.docx";
-
-    private void createContract()
-    {
-        app = new Microsoft.Office.Interop.Word.Application();
-        doc = app.Documents.Open(ref FileLoaction, ref objectMiss, ref objectMiss, ref objectMiss, ref objectMiss,
-            ref objectMiss, ref objectMiss, ref objectMiss, ref objectMiss, ref objectMiss,
-            ref objectMiss, ref objectMiss, ref objectMiss, ref objectMiss, ref objectMiss, ref objectMiss);
-        ReplaceText("[Phone]", "123-456");
-        doc.ExportAsFixedFormat(outputPathContract, Microsoft.Office.Interop.Word.WdExportFormat.wdExportFormatPDF);
-
-        doc.Close(WdSaveOptions.wdDoNotSaveChanges, WdOriginalFormat.wdOriginalDocumentFormat, false);
-        app.Quit(WdSaveOptions.wdDoNotSaveChanges);
-    }
-
-    private void ReplaceText(object FindText, object ReplaceText)
-    {
-        this.app.Selection.Find.Execute(ref FindText, true, true, false, false
-            , false, true, false, 1, ref ReplaceText, 2, false, false, false, false);
-    }
-
     public async Task<ResultDTO<bool>> CancelByCustomer(int BookingId)
     {
         var booking = await _bookingRepository.GetByIdAsync(BookingId);

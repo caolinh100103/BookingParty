@@ -24,6 +24,6 @@ public class FeedbackController : ControllerBase
     public async Task<IActionResult> CreateFeedback([FromBody] FeedbackCreatedDTO feedbackCreatedDto)
     {
         var result = await _feedbackService.CreateFeedback(feedbackCreatedDto);
-        return Ok();
+        return Ok(result);
     }
 }
