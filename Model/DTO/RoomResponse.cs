@@ -12,6 +12,7 @@ public class RoomResponse
     public decimal Price { get; set; }
     public decimal SalePrice {get; set; }
     public float Area { get; set; }
+    public UserDTO User { get; set; }
     public ICollection<FeedbackReponseDTO>? Feedbacks { get; set; }
     public ICollection<FacilityRepsonseDTO>? Facilities { get; set; }
 }

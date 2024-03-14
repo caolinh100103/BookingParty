@@ -84,6 +84,12 @@ public class RoomService : IRoomService
                     feedbackReponseDtos.Add(feedbackMapper);
                 }
             }
+            var user = await _userRepository.GetByIdAsync(room.UserId);
+            var userMapper = new UserDTO();
+            if (user != null)
+            {
+                userMapper = _mapper.Map<UserDTO>(user);
+            }
             roomResponse = new RoomResponse()
             {
                 Address = room.Address,
@@ -94,7 +100,8 @@ public class RoomService : IRoomService
                 RoomName = room.RoomName,
                 Price = room.Price,
                 Facilities = facilityRepsonseDtos,
-                Feedbacks = feedbackReponseDtos
+                Feedbacks = feedbackReponseDtos,
+                User = userMapper
             };
             var promotion = await _promotionRepository.GetByProperty(x => x.RoomId == room.RoomId);
             if (promotion != null)
