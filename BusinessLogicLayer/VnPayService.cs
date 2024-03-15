@@ -58,19 +58,19 @@ public class VnPayService : IVnPayService
 
     public async Task UpdatePayment(VnPayResponseDTO vnPayResponseDto)
     {
+        
         var bookingId = int.Parse(vnPayResponseDto.BookingId);
         var booking = await _bookRepository.GetByIdAsync(bookingId);
         if (booking.Status == BookingStatus.CANCELED)
         {
             return;
         }
+        booking.Status = BookingStatus.DEPOSITED;
+        _ = await _bookRepository.UpdateAsync(booking);
         var Deposit = await _depositRepository.GetByProperty(x => x.BookingId == bookingId);
         var amount = decimal.Parse(vnPayResponseDto.Amount);
-        if (Deposit == null || booking.Status == BookingStatus.BOOKED)
+        if (Deposit == null)
         {
-            booking.Status = BookingStatus.DEPOSITED;
-            _ = await _bookRepository.UpdateAsync(booking);
-
             DepositDTO depositDto = new DepositDTO()
             {
                 Content = $"Making a deposit for Booking No.{bookingId}",
