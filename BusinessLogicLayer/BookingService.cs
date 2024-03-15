@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.ObjectModel;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -598,10 +599,31 @@ public class BookingService : IBookingService
         }
 
         var user = await _userRepository.GetByProperty(x => x.Email.Equals(emailClaim));
+        ICollection<BookingResponseDTO> response = new List<BookingResponseDTO>();
+        HashSet<int> bookingIds = new HashSet<int>();
         if (user != null)
         {
-            
+            var roomBookingList = await _roomRepository.GetListByProperty(x => x.UserId == user.UserId);
+            foreach (var room in roomBookingList)
+            {
+                var getBooking = await _bookingDetailRepository.GetByProperty(x => x.RoomId == room.RoomId);
+                bookingIds.Add(getBooking.BookingId);
+            }
+
+            foreach (var bookingId in bookingIds)
+            {
+                var booking = await _bookingRepository.GetByProperty(x => x.BookingId == bookingId);
+                var bookingMapper = _mapper.Map<BookingResponseDTO>(booking);
+                response.Add(bookingMapper);
+            }
         }
+
+        return new ResultDTO<ICollection<BookingResponseDTO>>()
+        {
+            Data = response,
+            isSuccess = true,
+            Message = "The Booking of Party Host"
+        };
     }
 
     public async Task<ResultDTO<bool>> CancelByCustomer(int BookingId)
