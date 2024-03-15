@@ -65,12 +65,12 @@ public class VnPayService : IVnPayService
         {
             return;
         }
-        booking.Status = BookingStatus.DEPOSITED;
-        _ = await _bookRepository.UpdateAsync(booking);
         var Deposit = await _depositRepository.GetByProperty(x => x.BookingId == bookingId);
         var amount = decimal.Parse(vnPayResponseDto.Amount);
-        if (Deposit == null)
+        if (Deposit == null || booking.Status == BookingStatus.BOOKED)
         {
+            booking.Status = BookingStatus.DEPOSITED;
+            _ = await _bookRepository.UpdateAsync(booking);
             DepositDTO depositDto = new DepositDTO()
             {
                 Content = $"Making a deposit for Booking No.{bookingId}",

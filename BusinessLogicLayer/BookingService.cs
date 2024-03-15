@@ -603,13 +603,21 @@ public class BookingService : IBookingService
         HashSet<int> bookingIds = new HashSet<int>();
         if (user != null)
         {
+            // Check for room
             var roomBookingList = await _roomRepository.GetListByProperty(x => x.UserId == user.UserId);
             foreach (var room in roomBookingList)
             {
                 var getBooking = await _bookingDetailRepository.GetByProperty(x => x.RoomId == room.RoomId);
-                bookingIds.Add(getBooking.BookingId);
+                if (getBooking != null)
+                     bookingIds.Add(getBooking.BookingId);
             }
-
+            var serviceBookingList = await _serviceRepository.GetListByProperty(x => x.UserId == user.UserId);
+            foreach (var service in serviceBookingList)
+            {
+                var getBooking = await _bookingDetailRepository.GetByProperty(x => x.ServiceId == service.ServiceId);
+                if (getBooking != null)
+                    bookingIds.Add(getBooking.BookingId);
+            }
             foreach (var bookingId in bookingIds)
             {
                 var booking = await _bookingRepository.GetByProperty(x => x.BookingId == bookingId);
