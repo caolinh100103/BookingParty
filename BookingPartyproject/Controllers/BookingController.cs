@@ -65,7 +65,7 @@ public class BookingController : ControllerBase
     }
 
     [HttpGet("booking/{userId}")]
-    [Authorize(Roles = "Customer,Party Host")]
+    [Authorize(Roles = "Customer")]
     public async Task<IActionResult> GetAllBookingByUserId(int userId)
     {
         var result = await _bookingService.GetAllBookingByUserId(userId);
@@ -77,6 +77,15 @@ public class BookingController : ControllerBase
     public async Task<IActionResult> CancelByPartyHost([FromBody]int bookingId)
     {
         var result = await _bookingService.CancelByPartyHost(bookingId);
+        return Ok(result);
+    }
+
+    [HttpGet]
+    [Authorize(Roles = "Party Host")]
+    public async Task<IActionResult> GetBookingOfPartyHost()
+    {
+        string tokenAuth = Request.Cookies["token"];
+        var result = await _bookingService.GetBookingByPartyHost(tokenAuth);
         return Ok(result);
     }
 }

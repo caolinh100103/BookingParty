@@ -583,6 +583,27 @@ public class BookingService : IBookingService
                 Message = "Internal Error"
             };
     }
+
+    public async Task<ResultDTO<ICollection<BookingResponseDTO>>> GetBookingByPartyHost(string token)
+    {
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var securityToken = tokenHandler.ReadToken(token) as SecurityToken;
+
+        // Access the user's email claim
+        string emailClaim = null;
+        if (securityToken is JwtSecurityToken jwtToken)
+        {
+            // Access the user's email claim
+            emailClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
+        }
+
+        var user = await _userRepository.GetByProperty(x => x.Email.Equals(emailClaim));
+        if (user != null)
+        {
+            
+        }
+    }
+
     public async Task<ResultDTO<bool>> CancelByCustomer(int BookingId)
     {
         var booking = await _bookingRepository.GetByIdAsync(BookingId);
