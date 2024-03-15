@@ -8,7 +8,7 @@ public class RoomResponse
     public int Capacity { get; set; }
     public string Address { get; set; }
     public int Status { get; set; }
-    public ICollection<String>? Images { get; set; }
+    public ICollection<ImageDTO>? Images { get; set; }
     public decimal Price { get; set; }
     public decimal SalePrice {get; set; }
     public float Area { get; set; }

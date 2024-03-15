@@ -36,14 +36,15 @@ public class RoomService : IRoomService
     }
     public async Task<ResultDTO<ICollection<RoomResponse>>> GetRooms()
     {
-        ICollection<RoomResponse> roomResponses = new List<RoomResponse>(); 
-        ICollection<String> imageStr = new List<String>();
+        ICollection<RoomResponse> roomResponses = new List<RoomResponse>();
+        ICollection<ImageDTO> ImageDtos= null;
         ICollection<FeedbackReponseDTO> feedbackReponseDtos = null;
         var rooms = await _roomRepository.GetAllAsync();
         ICollection<FacilityRepsonseDTO> facilityRepsonseDtos = null;
         RoomResponse roomResponse = null;
         foreach (var room in rooms)
         {
+            ImageDtos = new List<ImageDTO>();
             feedbackReponseDtos = new List<FeedbackReponseDTO>();
             facilityRepsonseDtos = new List<FacilityRepsonseDTO>();
             var facilities = await _facilityRepository.GetListByProperty(x => x.RoomId == room.RoomId);
@@ -116,10 +117,11 @@ public class RoomService : IRoomService
             {
                 foreach (var image in images)
                 {
-                    imageStr.Add(image.ImageBase64);
+                    var imageDto = _mapper.Map<ImageDTO>(image);
+                    ImageDtos.Add(imageDto);
                 }
 
-                roomResponse.Images = imageStr;
+                roomResponse.Images = ImageDtos;
             }
             roomResponses.Add(roomResponse);
         }
@@ -135,14 +137,15 @@ public class RoomService : IRoomService
 
     public async Task<ResultDTO<ICollection<RoomResponse>>> GetRoomsWithPaging(int page, int pageSize)
     {
-        ICollection<RoomResponse> roomResponses = new List<RoomResponse>(); 
-        ICollection<String> imageStr = new List<String>();
+        ICollection<RoomResponse> roomResponses = new List<RoomResponse>();
+        ICollection<ImageDTO> ImageDtos = null;
         ICollection<FeedbackReponseDTO> feedbackReponseDtos = new List<FeedbackReponseDTO>();
         var roomsPage = await _roomRepository.GetPaginatedListAsync(page, pageSize);
         ICollection<FacilityRepsonseDTO> facilityRepsonseDtos = new List<FacilityRepsonseDTO>();
         RoomResponse roomResponse = null;
         foreach (var room in roomsPage.Items)
         {
+            ImageDtos = new List<ImageDTO>();
             var facilities = await _facilityRepository.GetListByProperty(x => x.RoomId == room.RoomId);
             if (!facilities.IsNullOrEmpty())
             {
@@ -187,10 +190,11 @@ public class RoomService : IRoomService
             {
                 foreach (var image in images)
                 {
-                    imageStr.Add(image.ImageBase64);
+                    var imageDto = _mapper.Map<ImageDTO>(image);
+                    ImageDtos.Add(imageDto);
                 }
 
-                roomResponse.Images = imageStr;
+                roomResponse.Images = ImageDtos;
             }
             roomResponses.Add(roomResponse);
         }
