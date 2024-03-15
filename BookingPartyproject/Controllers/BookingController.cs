@@ -80,7 +80,7 @@ public class BookingController : ControllerBase
         return Ok(result);
     }
 
-    [HttpGet]
+    [HttpGet("get_booking_parthost")]
     [Authorize(Roles = "Party Host")]
     public async Task<IActionResult> GetBookingOfPartyHost()
     {
