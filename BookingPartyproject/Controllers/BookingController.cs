@@ -35,6 +35,7 @@ public class BookingController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> GetAllBooking()
     {
         var result = await _bookingService.GetAllBooking();
@@ -42,6 +43,7 @@ public class BookingController : ControllerBase
     }
 
     [HttpGet("bookingdetails")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> GetAllBookingDetail(int bookingId)
     {
         var result = await _bookingService.GetAllBookingDetailByBookingId(bookingId);
@@ -57,7 +59,7 @@ public class BookingController : ControllerBase
     }
 
     [HttpPut("finishBooking")]
-    [Authorize("Customer")]
+    [Authorize("Party Host")]
     public async Task<IActionResult> FinishBooking([FromBody] int bookingId)
     {
         var result = await _bookingService.FinishBooking(bookingId);
@@ -80,7 +82,7 @@ public class BookingController : ControllerBase
         return Ok(result);
     }
 
-    [HttpGet("get_booking_parthost")]
+    [HttpGet("get_booking_partyhost")]
     [Authorize(Roles = "Party Host")]
     public async Task<IActionResult> GetBookingOfPartyHost()
     {

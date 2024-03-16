@@ -1,4 +1,5 @@
 using BusinessLogicLayer.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Model.DTO;
 
@@ -44,6 +45,7 @@ public class RoomController : ControllerBase
         return Ok(response);
     }
     [HttpPost]
+    [Authorize(Roles = "Party Host")]
     public async Task<IActionResult> CreateRoom([FromForm] RoomCreatedDTO roomDto)
     {
         var checkRoom = await _roomService.CreateRoom(roomDto);
@@ -51,6 +53,7 @@ public class RoomController : ControllerBase
     }
 
     [HttpPut("disabelroom/{roomId}")]
+    [Authorize(Roles = "Admin, Party Host")]
     public async Task<IActionResult> DisableRoom(int roomId)
     {
         var result = await _roomService.DisableRoom(roomId);
@@ -70,6 +73,7 @@ public class RoomController : ControllerBase
     }
 
     [HttpGet("party_host/rooms/{partyHostId}")]
+    [Authorize(Roles = "Party Host")]
     public async Task<IActionResult> GetRoomsByPartyHostId(int partyHostId)
     {
         var result = await _roomService.GetAllRoomsByPartyHostId(partyHostId);

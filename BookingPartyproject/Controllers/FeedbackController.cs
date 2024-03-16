@@ -1,4 +1,5 @@
 using BusinessLogicLayer.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Model.DTO;
 
@@ -21,6 +22,7 @@ public class FeedbackController : ControllerBase
     // } 
 
     [HttpPost("Create")]
+    [Authorize(Roles = "Customer")]
     public async Task<IActionResult> CreateFeedback([FromBody] FeedbackCreatedDTO feedbackCreatedDto)
     {
         var result = await _feedbackService.CreateFeedback(feedbackCreatedDto);

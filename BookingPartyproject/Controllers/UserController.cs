@@ -50,6 +50,7 @@ public class UserController : ControllerBase
     }
 
     [HttpPut("updateAddress/{userId}")]
+    [Authorize(Roles = "Customer")]
     public async Task<IActionResult> UpdateUserAdress(int userid, AdressUpdatedDTO adressUpdatedDto)
     {
         var result = await _userService.UpdateAddressOfUser(adressUpdatedDto);
@@ -62,6 +63,7 @@ public class UserController : ControllerBase
     //     
     // }
     [HttpPut("disabeluser/{userId}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DisableService(int userId)
     {
         var result = await _userService.DisableUser(userId);

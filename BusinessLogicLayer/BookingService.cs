@@ -88,7 +88,7 @@ public class BookingService : IBookingService
         }
 
         var days = (bookingDto.StartTime - DateTime.Now).Days;
-        if (days > 270)
+        if (days > 365)
         {
             ResultDTO<BookingResponseDTO> bookingResponse = new ResultDTO<BookingResponseDTO>
             {
@@ -124,17 +124,17 @@ public class BookingService : IBookingService
         }
 
         var hours = (bookingDto.EndTIme - bookingDto.StartTime).TotalHours;
-        if (hours > 4)
+        if (hours > 6 || hours < 2)
         {
             ResultDTO<BookingResponseDTO> bookingResponse = new ResultDTO<BookingResponseDTO>
             {
-                Message = "Your booking have to book just less than 4 hours",
+                Message = "Your booking have to book just over 2 hours and less than 6 hours",
                 isSuccess = false,
                 Data = null
             };
             return bookingResponse;
         }
-
+        
         // Decode the token to access claims
         var tokenHandler = new JwtSecurityTokenHandler();
         var securityToken = tokenHandler.ReadToken(token) as SecurityToken;
