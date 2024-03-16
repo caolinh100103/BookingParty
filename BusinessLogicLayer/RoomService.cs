@@ -59,13 +59,13 @@ public class RoomService : IRoomService
             var feedbacks = await _feedbackRepository.GetListByProperty(x => x.RoomId == room.RoomId);
             var bookingDetails = await _bookingDetailrepository.GetListByProperty(x => x.RoomId == room.RoomId);
             var numOfBooking = bookingDetails.Count();
+            float avarageRating = 0f;
+            float sumFeedback = 0f;
             if (!feedbacks.IsNullOrEmpty())
             {
-                float avarageRating = 0f;
                 int numFeedBacks = feedbacks.Count();
                 if (numFeedBacks >= 1)
                 {
-                    float sumFeedback = 0f;
                     foreach (var feedback in feedbacks)
                     {
                         sumFeedback += feedback.Rate;
@@ -77,8 +77,6 @@ public class RoomService : IRoomService
                 foreach (var feedback in feedbacks)
                 {
                     var feedbackMapper = _mapper.Map<FeedbackReponseDTO>(feedback);
-                    feedbackMapper.AverageRating = avarageRating;
-                    feedbackMapper.NumOfBookings = numOfBooking;
                     var userFeedback = await _userRepository.GetByProperty(x => x.UserId == feedback.UserId);
                     var userFeedBackMapper = _mapper.Map<UserDTO>(userFeedback);
                     feedbackMapper.User = userFeedBackMapper;
@@ -102,7 +100,9 @@ public class RoomService : IRoomService
                 Price = room.Price,
                 Facilities = facilityRepsonseDtos,
                 Feedbacks = feedbackReponseDtos,
-                User = userMapper
+                User = userMapper,
+                AverageRating = avarageRating,
+                NumOfBookings = numOfBooking
             };
             var promotion = await _promotionRepository.GetByProperty(x => x.RoomId == room.RoomId);
             if (promotion != null)
@@ -360,13 +360,26 @@ public class RoomService : IRoomService
 
     public async Task<ResultDTO<ICollection<RoomResponse>>> GetAllRoomsByPartyHostId(int partyHostId)
     {
+        ICollection<ImageDTO> ImageDtos= null;
         ICollection<RoomResponse> response = new List<RoomResponse>();
         var rooms = await _roomRepository.GetListByProperty(x => x.UserId == partyHostId);
         if (!rooms.IsNullOrEmpty())
         {
             foreach (var room in rooms)
             {
+                ImageDtos = new List<ImageDTO>();
+                var images = await _imageRepository.GetListByProperty(x => x.RoomId == room.RoomId);
                 var roomMapper = _mapper.Map<RoomResponse>(room);
+                if (!images.IsNullOrEmpty())
+                {
+                    foreach (var image in images)
+                    {
+                        var imageDto = _mapper.Map<ImageDTO>(image);
+                        ImageDtos.Add(imageDto);
+                    }
+
+                    roomMapper.Images = ImageDtos;
+                }
                 response.Add(roomMapper);
             }
 

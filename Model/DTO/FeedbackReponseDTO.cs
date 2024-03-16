@@ -11,6 +11,4 @@ public class FeedbackReponseDTO
     public int? RoomId { get; set; }
     public int? ServiceId { get; set; }
     public UserDTO User { get; set; }
-    public float AverageRating { get; set; }
-    public int NumOfBookings { get; set; }
 }

@@ -238,13 +238,14 @@ namespace BusinessLogicLayer
                 var feedbacks = await _feedbackRepository.GetListByProperty(x => x.ServiceId == service.ServiceId);
                 var bookingDetails = await _bookingDetailRepository.GetListByProperty(x => x.ServiceId == service.ServiceId);
                 var numOfBooking = bookingDetails.Count();
+                float avarageRating = 0f;
+                float sumFeedback = 0f;
                 if (!feedbacks.IsNullOrEmpty())
                 {
-                    float avarageRating = 0f;
+                    
                     int numFeedBacks = feedbacks.Count();
                     if (numFeedBacks >= 1)
                     {
-                        float sumFeedback = 0f;
                         foreach (var feedback in feedbacks)
                         {
                             sumFeedback += feedback.Rate;
@@ -256,8 +257,6 @@ namespace BusinessLogicLayer
                     foreach (var feedback in feedbacks)
                     {
                         var feedbackMapper = _mapper.Map<FeedbackReponseDTO>(feedback);
-                        feedbackMapper.AverageRating = avarageRating;
-                        feedbackMapper.NumOfBookings = numOfBooking;
                         var userFeedback = await _userRepository.GetByProperty(x => x.UserId == feedback.UserId);
                         var userFeedBackMapper = _mapper.Map<UserDTO>(userFeedback);
                         feedbackMapper.User = userFeedBackMapper;
@@ -268,6 +267,8 @@ namespace BusinessLogicLayer
                 serviceResponse.Feedbacks = feedbackReponseDtos;
                 serviceResponse.Price = serviceMapper.Price;
                 serviceResponse.ServiceTitle = serviceMapper.ServiceTitle;
+                serviceResponse.AverageRating = avarageRating;
+                serviceResponse.NumOfBookings = numOfBooking;
                 var promotion = await _promotionRepository.GetByProperty(x => x.ServiceId == service.ServiceId);
                 if (promotion != null)
                 {

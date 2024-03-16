@@ -13,4 +13,6 @@ public class ServiceResponseDTO
     public ICollection<ImageDTO> Images { get; set; }
     public ICollection<FeedbackReponseDTO>? Feedbacks { get; set; }
     public decimal Sale_Price { get; set; }
+    public float AverageRating { get; set; }
+    public int NumOfBookings { get; set; }
 }

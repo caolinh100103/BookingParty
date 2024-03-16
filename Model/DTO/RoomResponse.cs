@@ -15,4 +15,6 @@ public class RoomResponse
     public UserDTO User { get; set; }
     public ICollection<FeedbackReponseDTO>? Feedbacks { get; set; }
     public ICollection<FacilityRepsonseDTO>? Facilities { get; set; }
+    public float AverageRating { get; set; }
+    public int NumOfBookings { get; set; }
 }
