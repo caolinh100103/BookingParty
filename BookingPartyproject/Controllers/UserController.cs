@@ -35,7 +35,7 @@ public class UserController : ControllerBase
     } 
     
     [HttpGet("/api/users")]
-    // [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> GetAllUser()
     {
         var result = await _userService.GetAllUser();
@@ -55,7 +55,16 @@ public class UserController : ControllerBase
         var result = await _userService.UpdateAddressOfUser(adressUpdatedDto);
         return Ok(result);
     }
-    
+
     // [HttpPut("user/{userId}")]
     // public async Task<IActionResult> UpdateUserInformation(int userId, UserDTO)
+    // {
+    //     
+    // }
+    [HttpPut("disabeluser/{userId}")]
+    public async Task<IActionResult> DisableService(int userId)
+    {
+        var result = await _userService.DisableUser(userId);
+        return Ok(result);
+    }
 }

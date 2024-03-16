@@ -308,7 +308,7 @@ public class BookingService : IBookingService
             SentTime = DateTime.Now
         };
         var notification = await _notificationRepository.AddAsync(noti);
-        // _sseService.SendNotification(notification.Content);
+        _sseService.SendNotification(notification.Content);
         if (services != null)
         {
             foreach (var service in services)

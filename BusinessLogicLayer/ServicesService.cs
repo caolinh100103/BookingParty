@@ -16,17 +16,19 @@ namespace BusinessLogicLayer
         private readonly IGenericRepository<Image> _imageRepository;
         private readonly IGenericRepository<User> _userRepository;
         private readonly IGenericRepository<Feedback> _feedbackRepository;
+        private readonly IGenericRepository<BookingDetail> _bookingDetailRepository;
         private readonly IMapper _mapper;
 
         public ServicesService (IGenericRepository<Service> serviceRepository, IGenericRepository<Promotion> promotionRepository,
             IGenericRepository<Image> imageRepository , IMapper mapper, IGenericRepository<User> userRepository,
-            IGenericRepository<Feedback> feedbackRepository)
+            IGenericRepository<Feedback> feedbackRepository, IGenericRepository<BookingDetail> bookingDetailRepository)
         {
             _serviceRepository = serviceRepository;
             _promotionRepository = promotionRepository;
             _imageRepository = imageRepository;
             _userRepository = userRepository;
             _feedbackRepository = feedbackRepository;
+            _bookingDetailRepository = bookingDetailRepository;
             _mapper = mapper;
         }
 
@@ -234,17 +236,33 @@ namespace BusinessLogicLayer
                 }
 
                 var feedbacks = await _feedbackRepository.GetListByProperty(x => x.ServiceId == service.ServiceId);
+                var bookingDetails = await _bookingDetailRepository.GetListByProperty(x => x.ServiceId == service.ServiceId);
+                var numOfBooking = bookingDetails.Count();
                 if (!feedbacks.IsNullOrEmpty())
                 {
+                    float avarageRating = 0f;
+                    int numFeedBacks = feedbacks.Count();
+                    if (numFeedBacks >= 1)
+                    {
+                        float sumFeedback = 0f;
+                        foreach (var feedback in feedbacks)
+                        {
+                            sumFeedback += feedback.Rate;
+                        }
+
+                        avarageRating = sumFeedback / numFeedBacks;
+                    }
+                
                     foreach (var feedback in feedbacks)
                     {
                         var feedbackMapper = _mapper.Map<FeedbackReponseDTO>(feedback);
+                        feedbackMapper.AverageRating = avarageRating;
+                        feedbackMapper.NumOfBookings = numOfBooking;
                         var userFeedback = await _userRepository.GetByProperty(x => x.UserId == feedback.UserId);
                         var userFeedBackMapper = _mapper.Map<UserDTO>(userFeedback);
                         feedbackMapper.User = userFeedBackMapper;
                         feedbackReponseDtos.Add(feedbackMapper);
                     }
-                    serviceResponse.Feedbacks = feedbackReponseDtos;
                 }
 
                 serviceResponse.Feedbacks = feedbackReponseDtos;

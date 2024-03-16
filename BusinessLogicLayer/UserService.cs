@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using AutoMapper;
+using BusinessLogicLayer.Enum;
 using BusinessLogicLayer.Interfaces;
 using DataAccessLayer.Interface;
 using Microsoft.IdentityModel.Tokens;
@@ -129,6 +130,39 @@ public class UserService : IUserService
             Data = null,
             isSuccess = false,
             Message = "The Id is not exist"
+        };
+    }
+
+    public async Task<ResultDTO<bool>> DisableUser(int userId)
+    {
+        var user = await _userRepository.GetByIdAsync(userId);
+        if (user != null && user.Status == UserStatus.ACTIVE)
+        {
+            user.Status = UserStatus.INACTIVE;
+            _ = await _userRepository.UpdateAsync(user);
+            return new ResultDTO<bool>()
+            {
+                Data = true,
+                isSuccess = true,
+                Message = "Disable user successfully"
+            };
+        }
+
+        if (user.Status == UserStatus.INACTIVE)
+        {
+            return new ResultDTO<bool>()
+            {
+                Data = true,
+                isSuccess = true,
+                Message = "The user has been disabled"
+            };
+        }
+
+        return  new ResultDTO<bool>()
+        {
+            Data = true,
+            isSuccess = true,
+            Message = "Internal Server"
         };
     }
 }
