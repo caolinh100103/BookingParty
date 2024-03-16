@@ -13,7 +13,6 @@ namespace Model.Entity
         public int FeedbackId { get; set; }
         public int Rate { get; set; }
         public string Content { get; set; }
-        public int Status { get; set; }
         public DateTime Created { get; set; }
         public int? ServiceId { get; set; }
         public virtual Service Service { get; set; }

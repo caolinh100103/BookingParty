@@ -71,6 +71,7 @@ namespace BookingPartyproject.Controllers
         // }
 
         [HttpPut("disabelservice/{ServiceId}")]
+        [Authorize(Roles = "Admin, Party Host")]
         public async Task<IActionResult> DisableService(int ServiceId)
         {
             var result = await _service.DisableService(ServiceId);
@@ -78,6 +79,7 @@ namespace BookingPartyproject.Controllers
         }
 
         [HttpPut("service/{serviceId}")]
+        [Authorize(Roles = "Party Host")]
         public async Task<IActionResult> UpdateService(int serviceId, [FromForm] ServiceUpdateDTO serviceCreatedDto)
         {
             var result = await _service.Update(serviceId, serviceCreatedDto);
@@ -102,6 +104,7 @@ namespace BookingPartyproject.Controllers
         }
 
         [HttpGet("party_host/service/{partyhostId}")]
+        [Authorize(Roles = "Party Host")]
         public async Task<IActionResult> GetServiceByPartyHost(int partyhostId)
         {
             var result = await _service.GetAllServiceBypartyHost(partyhostId);
