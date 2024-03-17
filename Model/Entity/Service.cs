@@ -24,7 +24,6 @@ namespace Model.Entity
         public virtual ICollection<Promotion> Promotions { get; set; }
         public virtual ICollection<Image> Images { get; set; }
         public virtual ICollection<BookingDetail> BookingDetails{ get; set; }
-        public virtual ICollection<ServiceItem> ServiceItems { get; set; }
         public virtual ICollection<ServiceAvailableInDay> ServiceAvailableInDays { get; set; }
     }
 }

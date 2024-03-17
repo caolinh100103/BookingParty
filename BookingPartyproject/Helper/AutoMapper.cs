@@ -43,6 +43,10 @@ namespace BookingPartyproject.Helper
             CreateMap<FeedbackReponseDTO , Feedback>();
             CreateMap<Service , ServiceResponseDTO>();
             CreateMap<ServiceResponseDTO , Service>();
+            CreateMap<WithDrawalReponseDTO , WithdrawalRequest>();
+            CreateMap<WithdrawalRequest , WithDrawalReponseDTO>();
+            CreateMap<WithdrawalRequest , WithdrawalCreatedDTO>();
+            CreateMap<WithdrawalCreatedDTO , WithdrawalRequest>();
         }
     }
 }

@@ -17,7 +17,6 @@ namespace DataAccessLayer
         public virtual DbSet<Contract> Contracts { get; set; }
         public virtual DbSet<Feedback> Feedbacks { get; set; }
         public virtual DbSet<Image> Images { get; set; }
-        public virtual DbSet<Item> Items { get; set; }
         public virtual DbSet<Notification> Notifications { get; set; }
         public virtual DbSet<Promotion> Promotions { get; set; }
         public virtual DbSet<Role> Roles { get; set; }
@@ -27,21 +26,10 @@ namespace DataAccessLayer
         public virtual DbSet<Room> Rooms { get; set; }
         public virtual DbSet<ServiceAvailableInDay> ServiceAvailableInDay { get; set; }
         public virtual DbSet<Facility> Facility { get; set; }
+        public virtual DbSet<WithdrawalRequest> WithdrawalRequests { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<ServiceItem>()
-                .HasKey(x => new { x.ServiceId, x.ItemId });
-            
-            modelBuilder.Entity<ServiceItem>()
-               .HasOne(x => x.Service)
-               .WithMany(x => x.ServiceItems)
-               .HasForeignKey(x => x.ServiceId);
-            modelBuilder.Entity<ServiceItem>()
-               .HasOne(x => x.Item)
-               .WithMany(x => x.ServiceItems)
-               .HasForeignKey(x => x.ItemId);
-
             modelBuilder.Entity<BookingDetail>()
                .HasOne(x => x.Service)
                .WithMany(x => x.BookingDetails)
@@ -173,6 +161,10 @@ namespace DataAccessLayer
            modelBuilder.Entity<Feedback>()
                .Property(x => x.ServiceId)
                .IsRequired(false);
+           modelBuilder.Entity<WithdrawalRequest>()
+               .HasOne(x => x.User)
+               .WithMany(x => x.WithdrawalRequests)
+               .HasForeignKey(x => x.UserId);
         }
     }
 }

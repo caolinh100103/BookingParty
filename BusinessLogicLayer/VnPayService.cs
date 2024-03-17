@@ -21,15 +21,24 @@ public class VnPayService : IVnPayService
     private readonly IGenericRepository<Booking> _bookRepository;
     private readonly IGenericRepository<Deposit> _depositRepository;
     private readonly IGenericRepository<TransactionHistory> _transactionHistory;
+    private readonly IGenericRepository<BookingDetail> _bookingDetailRepository;
+    private readonly IGenericRepository<User> _userrepository;
+    private readonly IGenericRepository<Room> _roomRepository;
+    private readonly IGenericRepository<Service> _serviceRepository;
     private readonly IMapper _mapper;
     public VnPayService(IConfiguration configuration, IGenericRepository<Booking> bookRepository,
-        IMapper mapper, IGenericRepository<Deposit> depositRepository, IGenericRepository<TransactionHistory> transactionHistory)
+        IMapper mapper, IGenericRepository<Deposit> depositRepository, IGenericRepository<TransactionHistory> transactionHistory, IGenericRepository<BookingDetail> bookingDetailRepository,
+        IGenericRepository<User> userrepository, IGenericRepository<Room> roomRepository, IGenericRepository<Service> serviceRepository)
     {
         _configuration = configuration;
         _bookRepository = bookRepository;
         _mapper = mapper;
         _depositRepository = depositRepository;
+        _bookingDetailRepository = bookingDetailRepository;
         _transactionHistory = transactionHistory;
+        _userrepository = userrepository;
+        _roomRepository = roomRepository;
+        _serviceRepository = serviceRepository;
     }
     public string CreatePaymentUrl(VNPayCreatedDTO vnPayCreatedDto, HttpContext context)
     {
@@ -90,12 +99,31 @@ public class VnPayService : IVnPayService
                     Amount = amount,
                     PaymentMethod = "VNPAY",
                     TransactionDate = vnPayResponseDto.PayDate,
-                    DepositId = depositCreated.DepositId
+                    DepositId = depositCreated.DepositId,
+                    PlatformFee = amount * 20 / 100
                 };
                 var transactionHistory = _mapper.Map<TransactionHistory>(transactionCreatedDto);
                 var transactionHistoryCreated = await _transactionHistory.AddAsync(transactionHistory);
             }
 
+            var bookingDetailList =
+                await _bookingDetailRepository.GetListByProperty(x => x.BookingId == int.Parse(vnPayResponseDto.BookingId));
+            // get voi room
+            var bookingDe = bookingDetailList.ElementAt(0);
+            var room = await _roomRepository.GetByProperty(x => x.RoomId == bookingDe.RoomId);
+            var partyHost = await _userrepository.GetByProperty(x => x.UserId == room.UserId);
+            var balance = partyHost.Balance;
+            partyHost.Balance = balance + (decimal.Parse(vnPayResponseDto.Amount) * 80 / 100);
+            _ = await _userrepository.UpdateAsync(partyHost);
+            // get voi service
+            foreach (var bookingDetail in bookingDetailList)
+            {
+                var service = await _serviceRepository.GetByProperty(x => x.ServiceId == bookingDetail.ServiceId);
+                var partyHostService = await _userrepository.GetByProperty(x => x.UserId == service.UserId);
+                partyHostService.Balance = decimal.Parse(vnPayResponseDto.Amount);
+                _ = await _userrepository.UpdateAsync(partyHost);
+            }
+            
             return;
         }
     }

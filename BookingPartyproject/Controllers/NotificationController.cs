@@ -15,7 +15,7 @@ public class NotificationController : ControllerBase
         _notificationService = notificationService;
     }
     [HttpGet("{userid}")]
-    [Authorize(Roles = "Customer, Party Host")]
+    [Authorize(Roles = "Customer,Party Host,Admin")]
     [ProducesResponseType(200, Type = typeof(ResultDTO<ICollection<NotificationResponseDTO>>))]
     public async Task<IActionResult> GetNotificationByUserId(int userid)
     {

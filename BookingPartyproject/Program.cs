@@ -78,7 +78,8 @@ builder.Services.AddScoped<IRoomService, RoomService>();
 builder.Services.AddScoped<IFileService, FileService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IFeedbackService, FeedbackService>();
-builder.Services.AddScoped<ISSEService, SSEService>();
+builder.Services.AddSingleton<SSEService>();
+builder.Services.AddScoped<IWithdrawalService, WithdrawalService>();
 
 builder.Services.AddScoped<IGenericRepository<Service>, GenericRepository<Service>>();
 builder.Services.AddScoped<IGenericRepository<User>, GenericRepository<User>>();
@@ -96,6 +97,7 @@ builder.Services.AddScoped<IGenericRepository<Facility>, GenericRepository<Facil
 builder.Services.AddScoped<IGenericRepository<Feedback>, GenericRepository<Feedback>>();
 builder.Services.AddScoped<IGenericRepository<ServiceAvailableInDay>, GenericRepository<ServiceAvailableInDay>>();
 builder.Services.AddScoped<IGenericRepository<Role>, GenericRepository<Role>>();
+builder.Services.AddScoped<IGenericRepository<WithdrawalRequest>, GenericRepository<WithdrawalRequest>>();
 
 builder.Services.AddCors(options =>
 {

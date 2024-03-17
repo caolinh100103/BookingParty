@@ -8,5 +8,6 @@ public class TransactionCreatedDTO
     public string TransactionDate { get; set; }
     public string? Status { get; set; }
     public decimal Amount { get; set; }
+    public decimal PlatformFee { get; set; }
     public int DepositId { get; set; }
 }

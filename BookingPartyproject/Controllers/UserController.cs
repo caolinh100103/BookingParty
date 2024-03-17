@@ -16,7 +16,7 @@ public class UserController : ControllerBase
     }
     
     [HttpGet]
-    [Authorize(Roles = "Customer,Party Host")]
+    [Authorize(Roles = "Customer,Party Host,Admin")]
     public async Task<IActionResult> GetUserById()
     {
         string tokenAuth = Request.Cookies["token"];

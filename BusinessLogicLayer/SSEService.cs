@@ -6,6 +6,8 @@ namespace BusinessLogicLayer;
 public class SSEService : ISSEService
 {
     private readonly List<StreamWriter> Clients = new List<StreamWriter>();
+    private readonly Dictionary<int, StreamWriter> _connections = new Dictionary<int, StreamWriter>();
+
     public async Task SendNotification(string message)
     {
         lock (Clients)
@@ -43,6 +45,24 @@ public class SSEService : ISSEService
                     ClientConnections.Remove(userId);
                 }
             }
+        }
+    }
+    
+    public void AddConnection(int userId, StreamWriter streamWriter)
+    {
+        _connections[userId] = streamWriter;
+    }
+
+    public void RemoveConnection(int userId)
+    {
+        _connections.Remove(userId);
+    }
+    public async Task SendNotificationToUserAsync(int userId, string notificationMessage)
+    {
+        if (_connections.TryGetValue(userId, out var responseStreamWriter))
+        {
+            await responseStreamWriter.WriteLineAsync($"data: {notificationMessage}\n\n");
+            await responseStreamWriter.FlushAsync();
         }
     }
 }

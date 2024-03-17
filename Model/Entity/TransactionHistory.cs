@@ -15,6 +15,7 @@ namespace Model.Entity
         public int? Txn_ref { get; set; }
         public string TransactionDate { get; set; }
         public decimal Amount { get; set; }
+        public decimal PlatformFee { get; set; }
         public string Status { get; set; }
         public int DepositId { get; set; }
         public virtual Deposit Deposit { get; set; }

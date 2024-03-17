@@ -17,8 +17,10 @@ using Microsoft.Office.Interop.Word;
 using System.Text;
 using Newtonsoft.Json;
 using System.Net;
+using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json.Linq;
 using Org.BouncyCastle.Utilities;
+using Task = System.Threading.Tasks.Task;
 
 namespace BusinessLogicLayer;
 
@@ -36,7 +38,8 @@ public class BookingService : IBookingService
     private readonly IGenericRepository<TransactionHistory> _transactionRepository;
     private readonly IConfiguration _configuration;
     private readonly IMapper _mapper;
-    private readonly ISSEService _sseService;
+    private readonly SSEService _sseService;
+
 
     public BookingService(IGenericRepository<Booking> bookingRepository,
         IGenericRepository<BookingDetail> bookingDetailRepository, IGenericRepository<Service> serviceRepository
@@ -47,7 +50,7 @@ public class BookingService : IBookingService
         IGenericRepository<Deposit> depositRepository,
         IGenericRepository<TransactionHistory> transactionRepository,
         IConfiguration configuration,
-        ISSEService sseService)
+        SSEService sseService)
     {
         _bookingRepository = bookingRepository;
         _bookingDetailRepository = bookingDetailRepository;
@@ -308,7 +311,14 @@ public class BookingService : IBookingService
             SentTime = DateTime.Now
         };
         var notification = await _notificationRepository.AddAsync(noti);
-        _sseService.SendNotification(notification.Content);
+        // lam cai sse
+        // int[] userIds = new int[] {35};
+        //
+        // foreach (var userId in userIds)
+        // {
+        //     string notificationMessage = "New booking created"; // Customize notification message as needed
+        //     await _sseService.SendNotificationToUserAsync(userId, notificationMessage);
+        // }        
         if (services != null)
         {
             foreach (var service in services)
@@ -428,7 +438,8 @@ public class BookingService : IBookingService
         var booking = await _bookingRepository.GetByIdAsync(bookingId);
         if (booking != null)
         {
-            var anyBookingDetail = await _bookingDetailRepository.GetByProperty(x => x.BookingId == bookingId);
+            var bookingDetaiList = await _bookingDetailRepository.GetListByProperty(x => x.BookingId == bookingId);
+            var anyBookingDetail = bookingDetaiList.ElementAt(0);
             if (anyBookingDetail.EndTIme < DateTime.Now)
             {
                 return new ResultDTO<int>()
@@ -475,11 +486,27 @@ public class BookingService : IBookingService
                                 Status = TransactionStatus.FINISHED,
                                 BankCode = null,
                                 PaymentMethod = "COD",
-                                TransactionDate = DateTime.Now.ToString("yyyyMMdd")
+                                TransactionDate = DateTime.Now.ToString("yyyyMMdd"),
+                                PlatformFee = booking.TotalPrice * 20 / 100
                             };
                             var transaction = await _transactionRepository.AddAsync(transactionHistory);
                             if (transaction != null)
                             {
+                                var room = await _roomRepository.GetByProperty(x => x.RoomId == anyBookingDetail.RoomId);
+                                var partyHost = await _userRepository.GetByProperty(x => x.UserId == room.UserId);
+                                var balance = partyHost.Balance;
+                                partyHost.Balance = balance + (transaction.Amount * 80 / 100);
+                                _ = await _userRepository.UpdateAsync(partyHost);
+                                // get voi service
+                                foreach (var bookingDetail in bookingDetaiList)
+                                {
+                                    var service = await _serviceRepository.GetByProperty(x => x.ServiceId == bookingDetail.ServiceId);
+                                    var partyHostService = await _userRepository.GetByProperty(x => x.UserId == service.UserId);
+                                    var balanceService = partyHost.Balance;
+                                    partyHost.Balance = balanceService + (transaction.Amount * 80 / 100);
+                                    _ = await _userRepository.UpdateAsync(partyHostService);
+                                }
+                                
                                 return new ResultDTO<int>()
                                 {
                                     Data = 1,
@@ -845,88 +872,88 @@ public class BookingService : IBookingService
     }
     
     public async Task<string> RefundAsync(string vnp_txnRef, string transactionDate, int getAmount, string UserName)
-{
-    try
     {
-        string vnp_RequestId = VnPayHelper.GetRandomNumber(8);
-        string vnp_Version = "2.1.0";
-        string vnp_Command = "refund";
-        string vnp_TmnCode = _configuration["Vnpay:Tmncode"];
-        string vnp_TxnRef = vnp_txnRef;
-        string vnp_TransactionType = "02";
-        int amount = getAmount;
-        string vnp_Amount = amount.ToString();
-        string vnp_OrderInfo = $"Hoan tien GD";
-        string vnp_TransactionNo = "";
-        string vnp_TransactionDate = transactionDate;
-        string vnp_CreateBy = UserName; // implement ten user
-        DateTime now = DateTime.Now;
-        TimeZoneInfo localZone = TimeZoneInfo.FindSystemTimeZoneById("Etc/GMT+7");
-        DateTime localTime = TimeZoneInfo.ConvertTime(now, TimeZoneInfo.Local, localZone);
-        string vnp_CreateDate = localTime.ToString("yyyyMMddHHmmss");
-        string vnp_IpAddr = VnPayHelper.GenerateRandomIPAddress();
-        
-
-        //
-        // var vnp_Params = new
-        // {
-        //     vnp_RequestId,
-        //     vnp_Version,
-        //     vnp_Command,
-        //     vnp_TmnCode,
-        //     vnp_TransactionType,
-        //     vnp_TxnRef,
-        //     vnp_Amount,
-        //     vnp_OrderInfo,
-        //     vnp_TransactionDate,
-        //     vnp_CreateBy,
-        //     vnp_CreateDate,
-        //     vnp_IpAddr
-        // };
-        JObject vnp_Params = new JObject();
-
-        //63562614
-        //20230616094041
-
-        vnp_Params.Add("vnp_RequestId", vnp_RequestId);
-        vnp_Params.Add("vnp_Version", vnp_Version);
-        vnp_Params.Add("vnp_Command", vnp_Command);
-        vnp_Params.Add("vnp_TmnCode", vnp_TmnCode);
-        vnp_Params.Add("vnp_TransactionType", vnp_TransactionType);
-        vnp_Params.Add("vnp_TxnRef", vnp_TxnRef);
-        vnp_Params.Add("vnp_Amount", vnp_Amount);
-        vnp_Params.Add("vnp_OrderInfo", vnp_OrderInfo);
-
-        vnp_Params.Add("vnp_TransactionDate", vnp_TransactionDate);
-        vnp_Params.Add("vnp_CreateBy", vnp_CreateBy);
-        vnp_Params.Add("vnp_CreateDate", vnp_CreateDate);
-        vnp_Params.Add("vnp_IpAddr", vnp_IpAddr);
-
-        string hash_Data = $"{vnp_RequestId}|{vnp_Version}|{vnp_Command}|{vnp_TmnCode}|{vnp_TransactionType}|{vnp_TxnRef}|{vnp_Amount}|{vnp_TransactionNo}|{vnp_TransactionDate}|{vnp_CreateBy}|{vnp_CreateDate}|{vnp_IpAddr}|{vnp_OrderInfo}";
-        string vnp_SecureHash = VnPayHelper.HmacSHA512(_configuration["Vnpay:HashSecret"], hash_Data);
-        vnp_Params.Add("vnp_SecureHash", vnp_SecureHash);
-        // var vnpJson = JsonConvert.SerializeObject(new { vnp_Params, vnp_SecureHash });
-
-        using (var httpClient = new HttpClient())
+        try
         {
-            var content = new StringContent(vnp_Params.ToString(), Encoding.UTF8, "application/json");
-            var httpResponse = await httpClient.PostAsync(VnPayHelper.vnp_apiUrl, content);
+            string vnp_RequestId = VnPayHelper.GetRandomNumber(8);
+            string vnp_Version = "2.1.0";
+            string vnp_Command = "refund";
+            string vnp_TmnCode = _configuration["Vnpay:Tmncode"];
+            string vnp_TxnRef = vnp_txnRef;
+            string vnp_TransactionType = "02";
+            int amount = getAmount;
+            string vnp_Amount = amount.ToString();
+            string vnp_OrderInfo = $"Hoan tien GD";
+            string vnp_TransactionNo = "";
+            string vnp_TransactionDate = transactionDate;
+            string vnp_CreateBy = UserName; // implement ten user
+            DateTime now = DateTime.Now;
+            TimeZoneInfo localZone = TimeZoneInfo.FindSystemTimeZoneById("Etc/GMT+7");
+            DateTime localTime = TimeZoneInfo.ConvertTime(now, TimeZoneInfo.Local, localZone);
+            string vnp_CreateDate = localTime.ToString("yyyyMMddHHmmss");
+            string vnp_IpAddr = VnPayHelper.GenerateRandomIPAddress();
+            
 
-            if (httpResponse.IsSuccessStatusCode)
+            //
+            // var vnp_Params = new
+            // {
+            //     vnp_RequestId,
+            //     vnp_Version,
+            //     vnp_Command,
+            //     vnp_TmnCode,
+            //     vnp_TransactionType,
+            //     vnp_TxnRef,
+            //     vnp_Amount,
+            //     vnp_OrderInfo,
+            //     vnp_TransactionDate,
+            //     vnp_CreateBy,
+            //     vnp_CreateDate,
+            //     vnp_IpAddr
+            // };
+            JObject vnp_Params = new JObject();
+
+            //63562614
+            //20230616094041
+
+            vnp_Params.Add("vnp_RequestId", vnp_RequestId);
+            vnp_Params.Add("vnp_Version", vnp_Version);
+            vnp_Params.Add("vnp_Command", vnp_Command);
+            vnp_Params.Add("vnp_TmnCode", vnp_TmnCode);
+            vnp_Params.Add("vnp_TransactionType", vnp_TransactionType);
+            vnp_Params.Add("vnp_TxnRef", vnp_TxnRef);
+            vnp_Params.Add("vnp_Amount", vnp_Amount);
+            vnp_Params.Add("vnp_OrderInfo", vnp_OrderInfo);
+
+            vnp_Params.Add("vnp_TransactionDate", vnp_TransactionDate);
+            vnp_Params.Add("vnp_CreateBy", vnp_CreateBy);
+            vnp_Params.Add("vnp_CreateDate", vnp_CreateDate);
+            vnp_Params.Add("vnp_IpAddr", vnp_IpAddr);
+
+            string hash_Data = $"{vnp_RequestId}|{vnp_Version}|{vnp_Command}|{vnp_TmnCode}|{vnp_TransactionType}|{vnp_TxnRef}|{vnp_Amount}|{vnp_TransactionNo}|{vnp_TransactionDate}|{vnp_CreateBy}|{vnp_CreateDate}|{vnp_IpAddr}|{vnp_OrderInfo}";
+            string vnp_SecureHash = VnPayHelper.HmacSHA512(_configuration["Vnpay:HashSecret"], hash_Data);
+            vnp_Params.Add("vnp_SecureHash", vnp_SecureHash);
+            // var vnpJson = JsonConvert.SerializeObject(new { vnp_Params, vnp_SecureHash });
+
+            using (var httpClient = new HttpClient())
             {
-                return await httpResponse.Content.ReadAsStringAsync();
-            }
-            else
-            {
-                return "VNPAY SERVICE ERROR, TRY AGAIN LATER";
+                var content = new StringContent(vnp_Params.ToString(), Encoding.UTF8, "application/json");
+                var httpResponse = await httpClient.PostAsync(VnPayHelper.vnp_apiUrl, content);
+
+                if (httpResponse.IsSuccessStatusCode)
+                {
+                    return await httpResponse.Content.ReadAsStringAsync();
+                }
+                else
+                {
+                    return "VNPAY SERVICE ERROR, TRY AGAIN LATER";
+                }
             }
         }
+        catch (Exception e)
+        {
+            Console.WriteLine(e.Message);
+            return "ERROR SERVER";
+        }
     }
-    catch (Exception e)
-    {
-        Console.WriteLine(e.Message);
-        return "ERROR SERVER";
-    }
-}
 }
 

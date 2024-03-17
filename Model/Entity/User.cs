@@ -31,6 +31,7 @@ namespace Model.Entity
         public virtual ICollection<TransactionHistory> TransactionHistories { get; set; }
         public virtual ICollection<Room> Rooms{ get; set; }
         public virtual ICollection<Feedback> Feedbacks{ get; set; }
+        public virtual ICollection<WithdrawalRequest> WithdrawalRequests{ get; set; }
     }
 }
 
