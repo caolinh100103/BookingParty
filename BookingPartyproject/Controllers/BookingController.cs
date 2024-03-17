@@ -90,5 +90,11 @@ public class BookingController : ControllerBase
         var result = await _bookingService.GetBookingByPartyHost(tokenAuth);
         return Ok(result);
     }
-    // [HttpGet]
+
+    [HttpGet("cancel_booking_booked")]
+    public async Task<IActionResult> CancelAllBookingNotDeposit()
+    {
+        await _bookingService.CancelBooking();
+        return Ok();
+    }
 }

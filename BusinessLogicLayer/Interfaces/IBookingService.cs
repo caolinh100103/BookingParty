@@ -13,4 +13,5 @@ public interface IBookingService
     Task<ResultDTO<ICollection<BookingResponseDTO>>> GetAllBookingByUserId(int userId);
     Task<ResultDTO<bool>> CancelByPartyHost(int BookingId);
     Task<ResultDTO<ICollection<BookingResponseDTO>>> GetBookingByPartyHost(string token);
+    Task CancelBooking();
 }

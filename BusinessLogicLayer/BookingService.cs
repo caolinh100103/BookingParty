@@ -670,6 +670,20 @@ public class BookingService : IBookingService
         };
     }
 
+    public async Task CancelBooking()
+    {
+        var bookings = await _bookingRepository.GetListByProperty(x => x.Status == BookingStatus.BOOKED);
+        foreach (var booking in bookings)
+        {
+            var days = (DateTime.Now - booking.BookingDate).Days;
+            if (days > 2)
+            {
+                booking.Status = BookingStatus.CANCELED;
+                _ = await _bookingRepository.UpdateAsync(booking);
+            }
+        }
+    }
+
     public async Task<ResultDTO<bool>> CancelByCustomer(int BookingId)
     {
         var booking = await _bookingRepository.GetByIdAsync(BookingId);
