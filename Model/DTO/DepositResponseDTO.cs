@@ -8,5 +8,5 @@ public class DepositResponseDTO
     public string Content { get; set; }
     public string Title { get; set; }
     public float Percentage { get; set; }
-    public virtual Booking Booking { get; set; }
+    // public virtual Booking Booking { get; set; }
 }

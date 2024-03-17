@@ -91,7 +91,6 @@ public class DepositService : IDepositService
                         Percentage = 50,
                         Title = deposit.Title,
                         Content = deposit.Content,
-                        Booking = booking
                     };
                     // var user = await _userRepository.GetByProperty(x => x.UserId == booking.UserId);
                     // // if (user != null)
