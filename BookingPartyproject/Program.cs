@@ -80,6 +80,7 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IFeedbackService, FeedbackService>();
 builder.Services.AddSingleton<SSEService>();
 builder.Services.AddScoped<IWithdrawalService, WithdrawalService>();
+builder.Services.AddScoped<IDepositService, DepositService>();
 
 builder.Services.AddScoped<IGenericRepository<Service>, GenericRepository<Service>>();
 builder.Services.AddScoped<IGenericRepository<User>, GenericRepository<User>>();

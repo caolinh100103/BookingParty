@@ -15,12 +15,17 @@ public class DepositService : IDepositService
     private readonly IGenericRepository<Booking> _bookingRepository;
     private readonly IGenericRepository<Notification> _notificationRepository;
     private readonly IGenericRepository<User> _userRepository;
-
+    private readonly IGenericRepository<Room> _roomRepository;
+    private readonly IGenericRepository<BookingDetail> _bookingDetailRepository;
+    private readonly IGenericRepository<Service> _serviceRepository;
     public DepositService(IMapper mapper, IGenericRepository<TransactionHistory> transactionRepository,
         IGenericRepository<Deposit> depositRepository,
         IGenericRepository<Booking> bookingRepository,
         IGenericRepository<Notification> notificationRepository,
-        IGenericRepository<User> userRepository)
+        IGenericRepository<User> userRepository,
+        IGenericRepository<Room> roomRepository,
+        IGenericRepository<BookingDetail> bookingDetailRepository,
+        IGenericRepository<Service> serviceRepository)
     {
         _mapper = mapper;
         _transactionRepository = transactionRepository;
@@ -28,6 +33,9 @@ public class DepositService : IDepositService
         _bookingRepository = bookingRepository;
         _notificationRepository = notificationRepository;
         _userRepository = userRepository;
+        _roomRepository = roomRepository;
+        _bookingDetailRepository = bookingDetailRepository;
+        _serviceRepository = serviceRepository;
     }
 
     public async Task<ResultDTO<DepositResponseDTO>> CreateDeposit(DepositCreatedDTO depositCreatedDto)
@@ -86,6 +94,22 @@ public class DepositService : IDepositService
                         Booking = booking
                     };
                     createNotification(depositCreatedDto);
+                    var bookingDetaiList = await _bookingDetailRepository.GetListByProperty(x => x.BookingId == booking.BookingId) ;
+                    var anyBookingDetail = bookingDetaiList.ElementAt(0);
+                    var room = await _roomRepository.GetByProperty(x => x.RoomId == anyBookingDetail.RoomId);
+                    var partyHost = await _userRepository.GetByProperty(x => x.UserId == room.UserId);
+                    var balance = partyHost.Balance;
+                    partyHost.Balance = balance + (transaction.Amount * 80 / 100);
+                    _ = await _userRepository.UpdateAsync(partyHost);
+                    // get voi service
+                    foreach (var bookingDetail in bookingDetaiList)
+                    {
+                        var service = await _serviceRepository.GetByProperty(x => x.ServiceId == bookingDetail.ServiceId);
+                        var partyHostService = await _userRepository.GetByProperty(x => x.UserId == service.UserId);
+                        var balanceService = partyHost.Balance;
+                        partyHost.Balance = balanceService + (transaction.Amount * 80 / 100);
+                        _ = await _userRepository.UpdateAsync(partyHostService);
+                    }
                     var result = new ResultDTO<DepositResponseDTO>()
                     {
                         Message = "Successfully pay with COD",
@@ -94,8 +118,7 @@ public class DepositService : IDepositService
                     };
                     return result;
                 }
-            }
-
+        }
         var response = new ResultDTO<DepositResponseDTO>()
         {
             Message = "Can not pay",
