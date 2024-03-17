@@ -73,12 +73,12 @@ public class DepositService : IDepositService
                     PaymentMethod = "COD",
                     BankCode = null,
                     TransactionDate = DateTime.Now.ToString(),
-                    Amount = (booking.TotalPrice) / 2
+                    Amount = (booking.TotalPrice) / 2,
+                    Status = TransactionStatus.FAIL,
+                    DepositId = deposit.DepositId
                 };
                 var transactionMapper = _mapper.Map<TransactionHistory>(transactionCreatedDto);
                 var transaction = await _transactionRepository.AddAsync(transactionMapper);
-                transaction.DepositId = deposit.DepositId;
-                transaction.Status = TransactionStatus.FAIL;
                 var transactionUpdate = await _transactionRepository.UpdateAsync(transaction);
                 if (transaction != null)
                 {
@@ -93,7 +93,18 @@ public class DepositService : IDepositService
                         Content = deposit.Content,
                         Booking = booking
                     };
-                    createNotification(depositCreatedDto);
+                    // var user = await _userRepository.GetByProperty(x => x.UserId == booking.UserId);
+                    // // if (user != null)
+                    // {
+                    //     Notification noti = new Notification()
+                    //     {
+                    //         UserId = user.UserId,
+                    //         Content = $"Deposit for Booking No.{booking.BookingId} successfully",
+                    //         Title = "Create Deposit",
+                    //         SentTime = DateTime.Now
+                    //     };
+                    //     _ = await _notificationRepository.AddAsync(noti);
+                    // }
                     var bookingDetaiList = await _bookingDetailRepository.GetListByProperty(x => x.BookingId == booking.BookingId) ;
                     var anyBookingDetail = bookingDetaiList.ElementAt(0);
                     var room = await _roomRepository.GetByProperty(x => x.RoomId == anyBookingDetail.RoomId);
