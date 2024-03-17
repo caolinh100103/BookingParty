@@ -59,7 +59,7 @@ public class BookingController : ControllerBase
     }
 
     [HttpPut("finishBooking")]
-    [Authorize("Party Host")]
+    [Authorize(Roles = "Customer")]
     public async Task<IActionResult> FinishBooking([FromBody] int bookingId)
     {
         var result = await _bookingService.FinishBooking(bookingId);
@@ -90,4 +90,5 @@ public class BookingController : ControllerBase
         var result = await _bookingService.GetBookingByPartyHost(tokenAuth);
         return Ok(result);
     }
+    // [HttpGet]
 }

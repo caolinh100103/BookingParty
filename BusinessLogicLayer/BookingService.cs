@@ -436,6 +436,15 @@ public class BookingService : IBookingService
     public async Task<ResultDTO<int>> FinishBooking(int bookingId)
     {
         var booking = await _bookingRepository.GetByIdAsync(bookingId);
+        if (booking != null && (booking.Status == BookingStatus.BOOKED || booking.Status == BookingStatus.CANCELED))
+        {
+            return new ResultDTO<int>()
+            {
+                isSuccess = false,
+                Message = "Can not finish a booking that has been canceled or just booked",
+                Data = 0
+            };
+        }
         if (booking != null)
         {
             var bookingDetaiList = await _bookingDetailRepository.GetListByProperty(x => x.BookingId == bookingId);
@@ -664,6 +673,17 @@ public class BookingService : IBookingService
     public async Task<ResultDTO<bool>> CancelByCustomer(int BookingId)
     {
         var booking = await _bookingRepository.GetByIdAsync(BookingId);
+        if (booking.Status == BookingStatus.BOOKED)
+        {
+            booking.Status = BookingStatus.CANCELED;
+            _ = _bookingRepository.UpdateAsync(booking);
+            return new ResultDTO<bool>()
+            {
+                Data = true,
+                isSuccess = true,
+                Message = "Cancel the booking have not deposited yet"
+            };
+        }
         // var bookingDetails = await _bookingDetailRepository.GetListByProperty(x => x.BookingId == BookingId);
         // BookingDetail FirstBookingDetail = bookingDetails.ElementAt(0);
         // BookingDetailDTO bookingDetailDto = _mapper.Map<BookingDetailDTO>(FirstBookingDetail);
