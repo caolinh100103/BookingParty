@@ -12,13 +12,27 @@ public class WithdrawalService : IWithdrawalService
     private readonly IGenericRepository<User> _userRepository;
     private readonly IMapper _mapper;
 
-    public WithdrawalService(IGenericRepository<WithdrawalRequest> withdrawalRepository, IMapper mapper)
+    public WithdrawalService(IGenericRepository<WithdrawalRequest> withdrawalRepository, IMapper mapper, IGenericRepository<User> userRepository)
     {
         _withdrawalRepository = withdrawalRepository;
+        _userRepository = userRepository;
         _mapper = mapper;
     }
     public async Task<ResultDTO<bool>> Create(WithdrawalCreatedDTO withdrawalCreatedDto)
     {
+        var user = await _userRepository.GetByProperty(x => x.UserId == withdrawalCreatedDto.UserId);
+        if (user != null)
+        {
+            if (user.Balance < withdrawalCreatedDto.Amount)
+            {
+                return new ResultDTO<bool>()
+                {
+                    Data = false,
+                    isSuccess = false,
+                    Message = "can not withdrawal with the amount over balance"
+                };
+            }
+        }
         WithdrawalRequest withdrawalRequest = new WithdrawalRequest()
         {
             UserId = withdrawalCreatedDto.UserId,
