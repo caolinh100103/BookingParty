@@ -24,6 +24,7 @@ public class FeedbackService : IFeedbackService
         if (feedbackCreatedDto.ServiceId == null)
         {
             var feedback = _mapper.Map<Feedback>(feedbackCreatedDto);
+            feedback.Created = DateTime.Now;
             var feedbackCreated = await _feedbackRepository.AddAsync(feedback);
             if (feedbackCreated != null)
             {
