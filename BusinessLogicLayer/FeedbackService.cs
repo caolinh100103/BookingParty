@@ -21,28 +21,11 @@ public class FeedbackService : IFeedbackService
     public async Task<ResultDTO<FeedbackReponseDTO>> CreateFeedback(FeedbackCreatedDTO feedbackCreatedDto)
     {
         FeedbackReponseDTO feedbackReponseDto = null;
-        if (feedbackCreatedDto.ServiceId == null)
+        if (feedbackCreatedDto.ServiceId == 0)
         {
             var feedback = _mapper.Map<Feedback>(feedbackCreatedDto);
             feedback.Created = DateTime.Now;
-            var feedbackCreated = await _feedbackRepository.AddAsync(feedback);
-            if (feedbackCreated != null)
-            {
-                var user = await _userRepository.GetByProperty(x => x.UserId == feedbackCreated.UserId);
-                var userMapper = _mapper.Map<UserDTO>(user);
-                feedbackReponseDto = _mapper.Map<FeedbackReponseDTO>(feedbackCreated);
-                feedbackReponseDto.User = userMapper;
-                return new ResultDTO<FeedbackReponseDTO>()
-                {
-                    Data = feedbackReponseDto,
-                    isSuccess = true,
-                    Message = "Create feedback of serivce"
-                };
-            }
-        }
-        else if (feedbackCreatedDto.RoomId == null)
-        {
-            var feedback = _mapper.Map<Feedback>(feedbackCreatedDto);
+            feedback.ServiceId = null;
             var feedbackCreated = await _feedbackRepository.AddAsync(feedback);
             if (feedbackCreated != null)
             {
@@ -55,6 +38,25 @@ public class FeedbackService : IFeedbackService
                     Data = feedbackReponseDto,
                     isSuccess = true,
                     Message = "Create feedback of room"
+                };
+            }
+        }
+        else if (feedbackCreatedDto.RoomId == 0)
+        {
+            var feedback = _mapper.Map<Feedback>(feedbackCreatedDto);
+            feedback.RoomId = null;
+            var feedbackCreated = await _feedbackRepository.AddAsync(feedback);
+            if (feedbackCreated != null)
+            {
+                var user = await _userRepository.GetByProperty(x => x.UserId == feedbackCreated.UserId);
+                var userMapper = _mapper.Map<UserDTO>(user);
+                feedbackReponseDto = _mapper.Map<FeedbackReponseDTO>(feedbackCreated);
+                feedbackReponseDto.User = userMapper;
+                return new ResultDTO<FeedbackReponseDTO>()
+                {
+                    Data = feedbackReponseDto,
+                    isSuccess = true,
+                    Message = "Create feedback of service"
                 };
             }
         }

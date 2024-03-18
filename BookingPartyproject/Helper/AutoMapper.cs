@@ -47,6 +47,8 @@ namespace BookingPartyproject.Helper
             CreateMap<WithdrawalRequest , WithDrawalReponseDTO>();
             CreateMap<WithdrawalRequest , WithdrawalCreatedDTO>();
             CreateMap<WithdrawalCreatedDTO , WithdrawalRequest>();
+            CreateMap<FeedbackCreatedDTO , Feedback>();
+            CreateMap<Feedback , FeedbackCreatedDTO>();
         }
     }
 }

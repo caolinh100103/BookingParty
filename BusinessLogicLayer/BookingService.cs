@@ -449,7 +449,7 @@ public class BookingService : IBookingService
         {
             var bookingDetaiList = await _bookingDetailRepository.GetListByProperty(x => x.BookingId == bookingId);
             var anyBookingDetail = bookingDetaiList.ElementAt(0);
-            if (anyBookingDetail.EndTIme < DateTime.Now)
+            if (anyBookingDetail.EndTIme > DateTime.Now)
             {
                 return new ResultDTO<int>()
                 {
